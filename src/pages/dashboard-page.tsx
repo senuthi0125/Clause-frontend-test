@@ -3,9 +3,10 @@ import {
   CalendarDays,
   FileText,
   ShieldAlert,
-  Settings,
+  ShieldCheck,
   Users,
-  Bell,
+  GitBranch,
+  Bot,
   Search,
   ChevronRight,
   Clock3,
@@ -13,7 +14,9 @@ import {
   AlertTriangle,
   CircleCheckBig,
   MoreHorizontal,
+  Sparkles,
 } from "lucide-react";
+import { NavLink } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -41,12 +44,13 @@ import {
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, active: true },
-  { label: "Calendar", icon: CalendarDays },
-  { label: "Contracts", icon: FileText },
-  { label: "AI Analysis", icon: ShieldAlert },
-  { label: "Admin", icon: Users },
-  { label: "Settings", icon: Settings },
+  { label: "Dashboard", icon: LayoutDashboard, href: "/" },
+  { label: "Contracts", icon: FileText, href: "/contracts" },
+  { label: "AI Analysis", icon: ShieldAlert, href: "/ai-analysis" },
+  { label: "Conflict Detection", icon: ShieldCheck, href: "/conflict-detection" },
+  { label: "Calendar", icon: CalendarDays, href: "/calendar" },
+  { label: "Workflows", icon: GitBranch, href: "/workflows" },
+  { label: "Admin", icon: Users, href: "/admin" },
 ];
 
 const contractGroups = [
@@ -145,7 +149,7 @@ function StatCard({
   icon: React.ComponentType<{ className?: string }>;
 }) {
   return (
-    <Card className="border-0 bg-white/70 shadow-sm backdrop-blur-sm">
+    <Card className="border border-slate-200 bg-white shadow-sm">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -173,9 +177,9 @@ export default function DashboardPage() {
   const totalRisk = riskData.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <div className="min-h-screen bg-slate-950 p-4 md:p-6">
-      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-7xl grid-cols-1 gap-4 rounded-[28px] bg-slate-100 p-3 shadow-2xl lg:grid-cols-[280px_minmax(0,1fr)] lg:p-4">
-        <aside className="rounded-[24px] bg-slate-900 text-slate-100 shadow-xl">
+    <div className="min-h-screen w-full bg-slate-100">
+      <div className="grid min-h-screen w-full grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="bg-slate-900 text-slate-100 lg:min-h-screen">
           <div className="flex h-full flex-col">
             <div className="border-b border-white/10 px-6 py-6">
               <div className="flex items-center gap-3">
@@ -197,19 +201,24 @@ export default function DashboardPage() {
               <nav className="space-y-1.5">
                 {navItems.map((item) => {
                   const Icon = item.icon;
+
                   return (
-                    <button
+                    <NavLink
                       key={item.label}
-                      className={cn(
-                        "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm transition",
-                        item.active
-                          ? "bg-white text-slate-900 shadow-sm"
-                          : "text-slate-300 hover:bg-white/5 hover:text-white"
-                      )}
+                      to={item.href}
+                      end={item.href === "/"}
+                      className={({ isActive }) =>
+                        cn(
+                          "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm transition cursor-pointer",
+                          isActive
+                            ? "bg-white text-slate-900 shadow-sm"
+                            : "text-slate-300 hover:bg-white/5 hover:text-white"
+                        )
+                      }
                     >
                       <Icon className="h-4 w-4" />
                       <span>{item.label}</span>
-                    </button>
+                    </NavLink>
                   );
                 })}
               </nav>
@@ -236,10 +245,14 @@ export default function DashboardPage() {
                     className="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3"
                   >
                     <div className="flex items-center gap-3">
-                      <span className={cn("h-2.5 w-2.5 rounded-full", item.color)} />
+                      <span
+                        className={cn("h-2.5 w-2.5 rounded-full", item.color)}
+                      />
                       <div>
                         <p className="text-sm text-slate-100">{item.name}</p>
-                        <p className="text-xs text-slate-400">Tracked repository</p>
+                        <p className="text-xs text-slate-400">
+                          Tracked repository
+                        </p>
                       </div>
                     </div>
                     <Badge
@@ -254,20 +267,34 @@ export default function DashboardPage() {
             </ScrollArea>
 
             <div className="m-4 rounded-[24px] bg-white p-5 text-slate-900 shadow-lg">
-              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100">
-                <Bell className="h-5 w-5 text-amber-500" />
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100">
+                  <Bot className="h-5 w-5 text-violet-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Clause AI Assistant</p>
+                  <p className="text-xs text-slate-500">Contract support chat</p>
+                </div>
               </div>
-              <h3 className="font-semibold">Need a faster review cycle?</h3>
-              <p className="mt-2 text-sm text-slate-500">
-                Use AI clause analysis and approval routing to reduce manual
-                follow-ups.
-              </p>
-              <Button className="mt-4 w-full rounded-xl">Create Contract</Button>
+
+              <div className="rounded-2xl bg-slate-50 p-3">
+                <div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-500">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Suggested prompt
+                </div>
+                <p className="text-sm text-slate-700">
+                  Summarize high-risk clauses from this week’s pending contracts.
+                </p>
+              </div>
+
+              <Button className="mt-4 w-full rounded-xl bg-slate-900 text-white hover:bg-slate-800">
+                Open AI Chatbot
+              </Button>
             </div>
           </div>
         </aside>
 
-        <main className="overflow-hidden rounded-[24px] bg-gradient-to-b from-white to-slate-50 shadow-sm">
+        <main className="min-w-0 bg-gradient-to-b from-white to-slate-50">
           <div className="border-b border-slate-200 px-5 py-4 md:px-7">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -291,7 +318,9 @@ export default function DashboardPage() {
                     <AvatarFallback>SA</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-sm font-medium text-slate-900">Senuthi A.</p>
+                    <p className="text-sm font-medium text-slate-900">
+                      Senuthi A.
+                    </p>
                     <p className="text-xs text-slate-500">Legal Ops / Admin</p>
                   </div>
                 </div>
@@ -307,14 +336,15 @@ export default function DashboardPage() {
             </section>
 
             <section className="grid gap-6 xl:grid-cols-[1.3fr_0.9fr]">
-              <Card className="border-0 bg-white/80 shadow-sm">
+              <Card className="border border-slate-200 bg-white shadow-sm">
                 <CardHeader className="flex flex-row items-start justify-between space-y-0">
                   <div>
                     <CardTitle className="text-lg">
                       Upcoming and due documents
                     </CardTitle>
                     <CardDescription>
-                      Deadlines, renewals, and contracts that need action this week.
+                      Deadlines, renewals, and contracts that need action this
+                      week.
                     </CardDescription>
                   </div>
                   <Button variant="ghost" size="icon" className="rounded-xl">
@@ -331,7 +361,9 @@ export default function DashboardPage() {
                         <div className="flex items-start gap-3">
                           <span className="mt-1 h-2.5 w-2.5 rounded-full bg-indigo-500" />
                           <div>
-                            <p className="font-medium text-slate-900">{item.title}</p>
+                            <p className="font-medium text-slate-900">
+                              {item.title}
+                            </p>
                             <p className="mt-1 text-sm text-slate-500">
                               {item.subtitle}
                             </p>
@@ -346,7 +378,7 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 bg-white/80 shadow-sm">
+              <Card className="border border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-lg">Risk distribution</CardTitle>
                   <CardDescription>
@@ -381,7 +413,9 @@ export default function DashboardPage() {
                         <p className="text-3xl font-semibold text-slate-900">
                           {totalRisk}
                         </p>
-                        <p className="text-sm text-slate-500">Analysed contracts</p>
+                        <p className="text-sm text-slate-500">
+                          Analysed contracts
+                        </p>
                       </div>
                     </div>
 
@@ -400,7 +434,9 @@ export default function DashboardPage() {
                               {item.name} risk
                             </span>
                           </div>
-                          <span className="text-sm text-slate-500">{item.value}%</span>
+                          <span className="text-sm text-slate-500">
+                            {item.value}%
+                          </span>
                         </div>
                       ))}
 
@@ -410,8 +446,8 @@ export default function DashboardPage() {
                           Cross-contract conflict detection ready
                         </div>
                         <p className="mt-2 text-indigo-900/80">
-                          Surface contradictory clauses by comparing new submissions
-                          against historical agreements.
+                          Surface contradictory clauses by comparing new
+                          submissions against historical agreements.
                         </p>
                       </div>
                     </div>
@@ -421,7 +457,7 @@ export default function DashboardPage() {
             </section>
 
             <section>
-              <Card className="border-0 bg-white/80 shadow-sm">
+              <Card className="border border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-lg">
                     Monthly contract approvals
