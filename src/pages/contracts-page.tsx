@@ -128,9 +128,7 @@ export default function ContractsPage() {
                   C
                 </div>
                 <div>
-                  <h1 className="text-2xl font-semibold tracking-tight">
-                    clause
-                  </h1>
+                  <h1 className="text-2xl font-semibold tracking-tight">clause</h1>
                   <p className="text-xs text-slate-400">
                     Contract lifecycle workspace
                   </p>
@@ -142,7 +140,6 @@ export default function ContractsPage() {
               <nav className="space-y-1.5">
                 {navItems.map((item) => {
                   const Icon = item.icon;
-
                   return (
                     <NavLink
                       key={item.label}
@@ -186,14 +183,10 @@ export default function ContractsPage() {
                     className="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3"
                   >
                     <div className="flex items-center gap-3">
-                      <span
-                        className={cn("h-2.5 w-2.5 rounded-full", item.color)}
-                      />
+                      <span className={cn("h-2.5 w-2.5 rounded-full", item.color)} />
                       <div>
                         <p className="text-sm text-slate-100">{item.name}</p>
-                        <p className="text-xs text-slate-400">
-                          Tracked repository
-                        </p>
+                        <p className="text-xs text-slate-400">Tracked repository</p>
                       </div>
                     </div>
                     <Badge
@@ -248,7 +241,7 @@ export default function ContractsPage() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Button
                   className="h-11 rounded-2xl bg-violet-600 px-5 text-white hover:bg-violet-700"
-                  onClick={() => navigate("/contracts/create")}
+                  onClick={() => navigate("/contracts/new")}
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   New Contract
@@ -321,15 +314,11 @@ export default function ContractsPage() {
                             <p className="text-[17px] font-semibold text-slate-900">
                               {contract.name}
                             </p>
-                            <p className="mt-1 text-sm text-slate-500">
-                              {contract.company}
-                            </p>
+                            <p className="mt-1 text-sm text-slate-500">{contract.company}</p>
                           </div>
                         </td>
 
-                        <td className="py-6 pr-6 text-base text-slate-700">
-                          {contract.type}
-                        </td>
+                        <td className="py-6 pr-6 text-base text-slate-700">{contract.type}</td>
 
                         <td className="py-6 pr-6">
                           <span
@@ -368,9 +357,7 @@ export default function ContractsPage() {
                           {contract.value}
                         </td>
 
-                        <td className="py-6 text-[17px] text-slate-700">
-                          {contract.end}
-                        </td>
+                        <td className="py-6 text-[17px] text-slate-700">{contract.end}</td>
                       </tr>
                     ))}
                   </tbody>
