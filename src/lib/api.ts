@@ -1,14 +1,23 @@
 import type {
+  AdminRecentUser,
+  AdminStats,
+  AdminUserActivity,
   AiAnalysisResponse,
   AiChatResponse,
   ApprovalListResponse,
+  ApprovalStat,
+  AuditLogResponse,
   ConflictResult,
   Contract,
+  ContractsByStage,
   ContractsResponse,
   DashboardStats,
   DraftResponse,
   Template,
   TemplatesResponse,
+  UserRole,
+  UsersListResponse,
+  ValueByType,
   Workflow,
 } from "../types/api";
 
@@ -28,10 +37,21 @@ class ApiError extends Error {
   }
 }
 
+function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem("clause_auth_token");
+  } catch {
+    return null;
+  }
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
     ...options,
@@ -194,6 +214,65 @@ export const api = {
         contract_id: contractId || null,
       }),
     }),
+
+  // ─── Admin ──────────────────────────────────────────────
+
+  getAdminStats: () => request<AdminStats>("/api/admin/stats"),
+
+  getAdminUserActivity: () =>
+    request<AdminUserActivity[]>("/api/admin/user-activity"),
+
+  getAdminContractsByStage: () =>
+    request<ContractsByStage[]>("/api/admin/contracts-by-stage"),
+
+  getAdminValueByType: () =>
+    request<ValueByType[]>("/api/admin/value-by-type"),
+
+  getAdminApprovalStats: () =>
+    request<ApprovalStat[]>("/api/admin/approval-stats"),
+
+  getAdminRecentUsers: () =>
+    request<AdminRecentUser[]>("/api/admin/recent-users"),
+
+  // ─── User Management (admin only) ───────────────────────
+
+  listUsers: (page = 1, perPage = 20) =>
+    request<UsersListResponse>(
+      `/api/auth/users?page=${page}&per_page=${perPage}`
+    ),
+
+  changeUserRole: (userId: string, role: UserRole) =>
+    request<unknown>(
+      `/api/auth/users/${userId}/role?role=${encodeURIComponent(role)}`,
+      { method: "PATCH" }
+    ),
+
+  deactivateUser: (userId: string) =>
+    request<unknown>(`/api/auth/users/${userId}/deactivate`, {
+      method: "PATCH",
+    }),
+
+  // ─── Audit Logs ─────────────────────────────────────────
+
+  listAuditLogs: (params: {
+    resource_type?: string;
+    resource_id?: string;
+    user_id?: string;
+    action?: string;
+    page?: number;
+    per_page?: number;
+  } = {}) => {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        search.set(key, String(value));
+      }
+    });
+    const suffix = search.toString();
+    return request<AuditLogResponse>(
+      `/api/audit/${suffix ? `?${suffix}` : ""}`
+    );
+  },
 };
 
 export { API_BASE_URL, ApiError };

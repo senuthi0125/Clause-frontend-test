@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find 'C:\\\\Users\\\\HP\\\\Desktop\\\\Clause all\\\\senuthi frontend\\\\Clause-frontend-test\\\\src' -type f \\\\\\(-name *.ts -o -name *.tsx -o -name *.js -o -name *.jsx \\\\\\))",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/health)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/api/dashboard/stats)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/)",
+      "Bash(curl -s -i -H \"Origin: http://localhost:5173\" http://localhost:8000/api/dashboard/stats)",
+      "Bash(curl -s http://localhost:8000/api/contracts/)",
+      "Bash(curl -s http://localhost:8000/api/templates/)",
+      "Bash(python -c \"from pymongo import MongoClient; c=MongoClient\\(''mongodb://localhost:27017''\\); print\\(''DBs:'', c.list_database_names\\(\\)\\); [print\\(f''  {d}:'', c[d].list_collection_names\\(\\)\\) for d in c.list_database_names\\(\\) if d not in \\(''admin'',''local'',''config''\\)]\")",
+      "Bash(python -c \":*)"
+    ]
+  }
+}

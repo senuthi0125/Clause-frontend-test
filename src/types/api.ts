@@ -211,3 +211,113 @@ export type DraftResponse = {
   generated_at: string;
   error?: string;
 };
+
+// ─── Admin / Users / Audit ────────────────────────────────
+
+export type UserRole = "admin" | "manager" | "user" | "viewer";
+export type AccountStatus = "active" | "inactive" | "suspended";
+
+export type AdminUser = {
+  id: string;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  organization?: string | null;
+  status: AccountStatus;
+  created_at: string;
+  last_login?: string | null;
+};
+
+export type UsersListResponse = {
+  users: AdminUser[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+};
+
+export type AdminStats = {
+  users: {
+    total: number;
+    active: number;
+    inactive: number;
+    by_role: Array<{ role: string; count: number }>;
+  };
+  contracts: {
+    total: number;
+    active: number;
+    draft: number;
+    expired: number;
+    terminated: number;
+    created_this_month: number;
+    expiring_soon: number;
+  };
+  contract_values: {
+    total_value: number;
+    avg_value: number;
+    max_value: number;
+  };
+  risk: { high: number; medium: number; low: number };
+  approvals: {
+    pending: number;
+    total: number;
+    approved: number;
+    rejected: number;
+  };
+  workflows: { active: number; completed: number };
+  templates: { total: number; active: number };
+  system: {
+    recent_audit_actions: number;
+    unread_notifications: number;
+  };
+};
+
+export type AdminUserActivity = {
+  id: string;
+  action: string;
+  resource_type: string;
+  user_email?: string | null;
+  details?: string | null;
+  created_at: string;
+};
+
+export type AdminRecentUser = {
+  id: string;
+  full_name?: string | null;
+  email?: string | null;
+  role?: string | null;
+  status?: string | null;
+  created_at?: string | null;
+  last_login?: string | null;
+};
+
+export type ContractsByStage = { stage: string; count: number };
+
+export type ValueByType = {
+  type: string;
+  total_value: number;
+  count: number;
+};
+
+export type ApprovalStat = { status: string; count: number };
+
+export type AuditLogEntry = {
+  id: string;
+  action: string;
+  resource_type: string;
+  resource_id?: string | null;
+  user_id?: string | null;
+  user_email?: string | null;
+  details?: string | null;
+  changes?: Record<string, unknown> | null;
+  ip_address?: string | null;
+  created_at: string;
+};
+
+export type AuditLogResponse = {
+  logs: AuditLogEntry[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+};
