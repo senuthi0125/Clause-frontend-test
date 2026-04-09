@@ -37,8 +37,21 @@ class ApiError extends Error {
   }
 }
 
+type ChatHistoryMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+type ChatRequestPayload = {
+  question: string;
+  contract_id?: string | null;
+  history?: ChatHistoryMessage[];
+  mode?: string;
+};
+
 function getStoredAuthToken(): string | null {
   if (typeof window === "undefined") return null;
+
   try {
     return window.localStorage.getItem("clause_auth_token");
   } catch {
@@ -57,17 +70,19 @@ export function setAuthTokenProvider(
 async function resolveToken(): Promise<string | null> {
   if (tokenProvider) {
     try {
-      const t = await tokenProvider();
-      if (t) return t;
+      const token = await tokenProvider();
+      if (token) return token;
     } catch (err) {
       console.warn("Auth token provider failed:", err);
     }
   }
+
   return getStoredAuthToken();
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = await resolveToken();
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
       "Content-Type": "application/json",
@@ -244,16 +259,32 @@ export const api = {
       body: JSON.stringify({ contract_ids: contractIds }),
     }),
 
-  chat: (question: string, contractId?: string) =>
-    request<AiChatResponse>("/api/ai/chat", {
-      method: "POST",
-      body: JSON.stringify({
-        question,
-        contract_id: contractId || null,
-      }),
-    }),
+  chat: (
+    questionOrPayload: string | ChatRequestPayload,
+    contractId?: string,
+    history?: ChatHistoryMessage[],
+    mode = "general"
+  ) => {
+    const payload: ChatRequestPayload =
+      typeof questionOrPayload === "string"
+        ? {
+            question: questionOrPayload,
+            contract_id: contractId || null,
+            history: history || [],
+            mode,
+          }
+        : {
+            question: questionOrPayload.question,
+            contract_id: questionOrPayload.contract_id ?? null,
+            history: questionOrPayload.history || [],
+            mode: questionOrPayload.mode || "general",
+          };
 
-  // ─── Admin ──────────────────────────────────────────────
+    return request<AiChatResponse>("/api/ai/chat", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
 
   getAdminStats: () => request<AdminStats>("/api/admin/stats"),
 
@@ -272,8 +303,6 @@ export const api = {
   getAdminRecentUsers: () =>
     request<AdminRecentUser[]>("/api/admin/recent-users"),
 
-  // ─── User Management (admin only) ───────────────────────
-
   listUsers: (page = 1, perPage = 20) =>
     request<UsersListResponse>(
       `/api/auth/users?page=${page}&per_page=${perPage}`
@@ -290,8 +319,6 @@ export const api = {
       method: "PATCH",
     }),
 
-  // ─── Audit Logs ─────────────────────────────────────────
-
   listAuditLogs: (params: {
     resource_type?: string;
     resource_id?: string;
@@ -301,16 +328,24 @@ export const api = {
     per_page?: number;
   } = {}) => {
     const search = new URLSearchParams();
+
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== "") {
         search.set(key, String(value));
       }
     });
+
     const suffix = search.toString();
+
     return request<AuditLogResponse>(
       `/api/audit/${suffix ? `?${suffix}` : ""}`
     );
   },
 };
 
-export { API_BASE_URL, ApiError };
+export {
+  API_BASE_URL,
+  ApiError,
+  type ChatHistoryMessage,
+  type ChatRequestPayload,
+};
