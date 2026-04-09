@@ -1,219 +1,201 @@
-import type { ReactNode } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { UserButton, useUser } from "@clerk/clerk-react";
+import { Link, useLocation } from "react-router-dom";
 import {
   CalendarDays,
   FileText,
-  GitBranch,
   LayoutDashboard,
-  Search,
+  Shield,
   ShieldAlert,
-  ShieldCheck,
-  ShieldUser,
+  Sparkles,
+  Search,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, href: "/" },
-  { label: "Contracts", icon: FileText, href: "/contracts" },
-  { label: "AI Analysis", icon: ShieldAlert, href: "/ai-analysis" },
-  { label: "Conflict Detection", icon: ShieldCheck, href: "/conflict-detection" },
-  { label: "Calendar", icon: CalendarDays, href: "/calendar" },
-  { label: "Workflows", icon: GitBranch, href: "/workflows" },
-];
+type ContractGroup = {
+  name: string;
+  count: number;
+};
 
 type AppShellProps = {
   title: string;
   subtitle?: string;
-  actions?: ReactNode;
-  children: ReactNode;
-  contractGroups?: Array<{ name: string; count: number }>;
+  contractGroups?: ContractGroup[];
+  actions?: React.ReactNode;
+  children: React.ReactNode;
 };
+
+const navigation = [
+  {
+    label: "Dashboard",
+    href: "/",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Contracts",
+    href: "/contracts",
+    icon: FileText,
+  },
+  {
+    label: "AI Analysis",
+    href: "/ai-analysis",
+    icon: Sparkles,
+  },
+  {
+    label: "Conflict Detection",
+    href: "/conflict-detection",
+    icon: Shield,
+  },
+  {
+    label: "Calendar",
+    href: "/calendar",
+    icon: CalendarDays,
+  },
+  {
+    label: "Risk Analysis",
+    href: "/risk-analysis",
+    icon: ShieldAlert,
+  },
+];
+
+function getInitials(title?: string) {
+  if (!title) return "C";
+  return title.trim().charAt(0).toUpperCase() || "C";
+}
 
 export function AppShell({
   title,
   subtitle,
+  contractGroups = [],
   actions,
   children,
-  contractGroups = [],
 }: AppShellProps) {
+  const location = useLocation();
+
   return (
-    <div className="min-h-screen w-full bg-slate-100">
-      <div className="grid min-h-screen w-full grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="bg-slate-900 text-slate-100 lg:min-h-screen">
-          <div className="flex h-full flex-col">
-            <div className="border-b border-white/10 px-6 py-6">
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-orange-400 via-blue-500 to-emerald-400 text-sm font-bold text-white">
-                  C
-                </div>
-                <div>
-                  <h1 className="text-2xl font-semibold tracking-tight">clause</h1>
-                  <p className="text-xs text-slate-400">
-                    Contract lifecycle workspace
-                  </p>
-                </div>
+    <div className="min-h-screen bg-slate-100">
+      <div className="flex min-h-screen">
+        <aside className="hidden w-[260px] shrink-0 bg-[#07153A] text-white lg:flex lg:flex-col">
+          <div className="border-b border-white/10 px-5 py-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 via-blue-500 to-cyan-400 text-lg font-semibold text-white">
+                {getInitials(title)}
+              </div>
+
+              <div className="min-w-0">
+                <p className="truncate text-[16px] font-semibold tracking-tight">
+                  clause
+                </p>
+                <p className="text-xs text-blue-100/80">
+                  Contract lifecycle workspace
+                </p>
               </div>
             </div>
+          </div>
 
-            <div className="px-4 py-4">
-              <nav className="space-y-1.5">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
+          <nav className="px-3 py-4">
+            <div className="space-y-2">
+              {navigation.map((item) => {
+                const isActive =
+                  item.href === "/"
+                    ? location.pathname === item.href
+                    : location.pathname.startsWith(item.href);
 
-                  return (
-                    <NavLink
-                      key={item.label}
-                      to={item.href}
-                      end={item.href === "/"}
-                      className={({ isActive }) =>
-                        cn(
-                          "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm transition",
-                          isActive
-                            ? "bg-white text-slate-900 shadow-sm"
-                            : "text-slate-300 hover:bg-white/5 hover:text-white"
-                        )
-                      }
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                    </NavLink>
-                  );
-                })}
-              </nav>
+                const Icon = item.icon;
+
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-[20px] px-4 py-3 text-[14px] transition",
+                      isActive
+                        ? "bg-white text-slate-950 shadow-sm"
+                        : "text-blue-50 hover:bg-white/8"
+                    )}
+                  >
+                    <Icon className="h-4.5 w-4.5 shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </Link>
+                );
+              })}
             </div>
 
-            <div className="px-6 pt-2">
-              <div className="flex items-center justify-between text-xs uppercase tracking-[0.16em] text-slate-400">
-                <span>Live Contract Types</span>
-              </div>
-            </div>
+            <div className="mt-10">
+              <p className="px-3 text-[11px] uppercase tracking-[0.28em] text-blue-100/65">
+                Live Contract Types
+              </p>
 
-            <ScrollArea className="mt-3 flex-1 px-4">
-              <div className="space-y-2 pb-6">
-                {contractGroups.length === 0 ? (
-                  <div className="rounded-2xl bg-white/5 px-4 py-3 text-sm text-slate-400">
-                    No contract groups yet.
-                  </div>
-                ) : (
-                  contractGroups.map((item) => (
+              <div className="mt-4 space-y-3">
+                {contractGroups.length > 0 ? (
+                  contractGroups.map((group) => (
                     <div
-                      key={item.name}
-                      className="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3"
+                      key={group.name}
+                      className="rounded-[20px] bg-white/8 px-4 py-3"
                     >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm text-slate-100">{item.name}</p>
-                        <p className="text-xs text-slate-400">From backend data</p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-[14px] font-medium text-white">
+                            {group.name}
+                          </p>
+                          <p className="text-xs text-blue-100/75">
+                            From backend data
+                          </p>
+                        </div>
+
+                        <div className="flex h-7 min-w-7 items-center justify-center rounded-full bg-white/10 px-2 text-xs text-white">
+                          {group.count}
+                        </div>
                       </div>
-                      <Badge
-                        variant="secondary"
-                        className="rounded-full bg-white/10 text-slate-200 hover:bg-white/10"
-                      >
-                        {item.count}
-                      </Badge>
                     </div>
                   ))
+                ) : (
+                  <div className="rounded-[20px] bg-white/8 px-4 py-3 text-xs text-blue-100/75">
+                    No contract groups available
+                  </div>
                 )}
               </div>
-            </ScrollArea>
-          </div>
+            </div>
+          </nav>
         </aside>
 
-        <main className="min-w-0 bg-slate-100">
-          <div className="border-b border-slate-200 bg-white px-5 py-4 md:px-7">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="border-b border-slate-200 bg-white">
+            <div className="flex flex-col gap-4 px-6 py-5 xl:flex-row xl:items-start xl:justify-between">
+              <div className="min-w-0">
                 <p className="text-sm text-slate-500">Welcome back</p>
-                <h2 className="text-2xl font-semibold leading-tight tracking-tight text-slate-900 md:text-3xl">
+                <h1 className="text-2xl font-semibold leading-tight tracking-tight text-slate-950 md:text-3xl">
                   {title}
-                </h2>
+                </h1>
                 {subtitle ? (
-                  <p className="mt-1 max-w-2xl text-sm text-slate-500">{subtitle}</p>
+                  <p className="mt-2 max-w-2xl text-sm text-slate-500 md:text-base">
+                    {subtitle}
+                  </p>
                 ) : null}
               </div>
 
-              <div className="flex items-center gap-3">
-                {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
-                <TopAdminButton />
-                <TopSearchBar />
-                <TopUserAvatar />
+              <div className="flex flex-col items-stretch gap-3 xl:min-w-[520px] xl:flex-row xl:items-center xl:justify-end">
+                {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+
+                <div className="flex items-center gap-3">
+                  <div className="hidden h-12 min-w-[360px] items-center gap-3 rounded-[18px] border border-slate-200 bg-white px-4 shadow-sm xl:flex">
+                    <Search className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm text-slate-400">
+                      Search contracts, parties, clauses...
+                    </span>
+                  </div>
+
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-base font-semibold text-emerald-900 shadow-sm">
+                    S
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          </header>
 
-          <div className="px-5 py-5 md:px-7">{children}</div>
-        </main>
+          <main className="flex-1 bg-slate-100 px-5 py-5 md:px-6 md:py-6">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
-  );
-}
-
-function TopSearchBar() {
-  return (
-    <div className="relative w-full sm:w-[320px] lg:w-[430px]">
-      <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-      <Input
-        placeholder="Search contracts, parties, clauses..."
-        className="h-14 rounded-2xl border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-slate-200"
-      />
-    </div>
-  );
-}
-
-function TopUserAvatar() {
-  return (
-    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <UserButton
-        afterSignOutUrl="/sign-in"
-        appearance={{
-          elements: {
-            avatarBox: "h-10 w-10",
-            userButtonAvatarBox: "h-10 w-10",
-            userButtonTrigger:
-              "flex h-10 w-10 items-center justify-center rounded-full overflow-hidden",
-          },
-        }}
-      />
-    </div>
-  );
-}
-
-function TopAdminButton() {
-  const { user, isLoaded } = useUser();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  if (!isLoaded) return null;
-
-  const role =
-    (user?.publicMetadata?.role as string | undefined) ||
-    (user?.unsafeMetadata?.role as string | undefined) ||
-    "";
-
-  const isAdmin = role.toLowerCase() === "admin";
-
-  if (!isAdmin) return null;
-
-  const isAdminPage = location.pathname.startsWith("/admin");
-
-  return (
-    <Button
-      type="button"
-      onClick={() => navigate("/admin")}
-      className={cn(
-        "h-14 rounded-2xl px-5 text-sm font-semibold shadow-sm",
-        isAdminPage
-          ? "bg-slate-900 text-white hover:bg-slate-900"
-          : "border border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
-      )}
-      variant="outline"
-    >
-      <ShieldUser className="mr-2 h-4 w-4" />
-      Admin
-    </Button>
   );
 }

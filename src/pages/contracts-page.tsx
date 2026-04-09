@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, Search, Trash2, Upload, Loader2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +17,13 @@ function formatLabel(value?: string | null) {
     .join(" ");
 }
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString(undefined, {
+function formatDate(value?: string | null) {
+  if (!value) return "—";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return date.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -35,7 +40,7 @@ function formatCurrency(value?: number | null) {
 }
 
 function badgeClass(value?: string | null) {
-  switch (value) {
+  switch ((value || "").toLowerCase()) {
     case "high":
       return "bg-red-100 text-red-700";
     case "medium":
@@ -60,11 +65,15 @@ function badgeClass(value?: string | null) {
 }
 
 export default function ContractsPage() {
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [meta, setMeta] = useState<ContractsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadContracts = async () => {
@@ -74,7 +83,7 @@ export default function ContractsPage() {
     try {
       const query = buildContractsQuery({ search, status, per_page: 50 });
       const data = await api.listContracts(query);
-      setContracts(data.contracts);
+      setContracts(Array.isArray(data.contracts) ? data.contracts : []);
       setMeta(data);
     } catch (err) {
       setError(
@@ -93,7 +102,8 @@ export default function ContractsPage() {
     const counts = new Map<string, number>();
 
     contracts.forEach((contract) => {
-      counts.set(contract.contract_type, (counts.get(contract.contract_type) || 0) + 1);
+      const type = contract.contract_type || "other";
+      counts.set(type, (counts.get(type) || 0) + 1);
     });
 
     return Array.from(counts.entries()).map(([name, count]) => ({
@@ -116,17 +126,67 @@ export default function ContractsPage() {
     }
   };
 
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleUploadChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const result = await api.uploadContract(file);
+      await loadContracts();
+
+      const newId = result?.contract?.id || result?.id;
+      if (newId) {
+        navigate(`/contracts/${newId}`);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to upload contract."
+      );
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
   return (
     <AppShell
       title="Contracts"
-      subtitle="Browse live contracts from the backend instead of hardcoded records."
+      subtitle="Browse live contracts from the backend and open detailed views."
       contractGroups={contractGroups}
       actions={
         <>
-          <Button variant="outline" onClick={loadContracts}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept=".pdf,.doc,.docx,.txt"
+            onChange={handleUploadChange}
+          />
+
+          <Button
+            variant="outline"
+            onClick={handleUploadClick}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="mr-2 h-4 w-4" />
+            )}
+            Upload contract
           </Button>
+
           <Button asChild>
             <Link to="/contracts/new">
               <Plus className="mr-2 h-4 w-4" />
@@ -150,7 +210,7 @@ export default function ContractsPage() {
             </div>
 
             <select
-              className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-sm"
+              className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
@@ -174,7 +234,10 @@ export default function ContractsPage() {
       ) : null}
 
       <div className="mt-5 grid gap-4">
-        {loading ? <p className="text-sm text-slate-500">Loading contracts...</p> : null}
+        {loading ? (
+          <p className="text-sm text-slate-500">Loading contracts...</p>
+        ) : null}
+
         {!loading && contracts.length === 0 ? (
           <p className="text-sm text-slate-500">No contracts found.</p>
         ) : null}
@@ -182,7 +245,8 @@ export default function ContractsPage() {
         {contracts.map((contract) => (
           <Card
             key={contract.id}
-            className="border border-slate-200 bg-white shadow-sm"
+            className="cursor-pointer border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md"
+            onClick={() => navigate(`/contracts/${contract.id}`)}
           >
             <CardHeader>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -193,7 +257,10 @@ export default function ContractsPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div
+                  className="flex flex-wrap gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Badge className={badgeClass(contract.status)}>
                     {formatLabel(contract.status)}
                   </Badge>
@@ -238,7 +305,10 @@ export default function ContractsPage() {
                     "No parties added"}
                 </div>
 
-                <div className="flex gap-2">
+                <div
+                  className="flex gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {contract.workflow_id ? (
                     <Button variant="outline" asChild>
                       <Link to={`/workflows/${contract.workflow_id}`}>

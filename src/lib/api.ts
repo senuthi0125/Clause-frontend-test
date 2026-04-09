@@ -83,13 +83,21 @@ async function resolveToken(): Promise<string | null> {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = await resolveToken();
 
+  const isFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
+
+  const headers: Record<string, string> = {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...((options.headers as Record<string, string> | undefined) || {}),
+  };
+
+  if (!isFormData && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
     ...options,
+    headers,
   });
 
   const text = await response.text();
@@ -204,6 +212,21 @@ export const api = {
     request<{ message: string }>(`/api/contracts/${id}`, {
       method: "DELETE",
     }),
+
+  uploadContract: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return request<{
+      id?: string;
+      contract?: Contract;
+      message?: string;
+      extracted_text?: string;
+    }>("/api/contracts/upload", {
+      method: "POST",
+      body: formData,
+    });
+  },
 
   listTemplates: (query = "") =>
     request<TemplatesResponse>(`/api/templates/${query}`),

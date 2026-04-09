@@ -11,10 +11,10 @@ import CalendarPage from "./pages/calendar-page";
 import ContractsPage from "./pages/contracts-page";
 import ContractTemplatePage from "./pages/contract-template-page";
 import CreateContractPage from "./pages/create-contract-page";
+import ContractDetailsPage from "./pages/contract-details-page";
 import ConflictDetectionPage from "./pages/conflict-detection-page";
 import AIAnalysisPage from "./pages/ai-analysis-page";
-import WorkflowsPage from "./pages/workflows-page";
-import WorkflowDetailPage from "./pages/workflow-detail-page";
+import RiskAnalysisPage from "./pages/risk-analysis-page";
 import AdminOverviewPage from "./pages/admin-overview-page";
 import AdminUsersPage from "./pages/admin-users-page";
 import AdminAuditPage from "./pages/admin-audit-page";
@@ -32,7 +32,6 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public auth routes */}
         <Route
           path="/sign-in/*"
           element={
@@ -46,6 +45,7 @@ export default function App() {
             </AuthLayout>
           }
         />
+
         <Route
           path="/sign-up/*"
           element={
@@ -60,7 +60,6 @@ export default function App() {
           }
         />
 
-        {/* Protected app routes */}
         <Route
           path="/*"
           element={
@@ -78,16 +77,19 @@ export default function App() {
                     path="/contracts/create"
                     element={<CreateContractPage />}
                   />
+                  <Route
+                    path="/contracts/:id"
+                    element={<ContractDetailsPage />}
+                  />
                   <Route path="/ai-analysis" element={<AIAnalysisPage />} />
                   <Route
                     path="/conflict-detection"
                     element={<ConflictDetectionPage />}
                   />
                   <Route path="/calendar" element={<CalendarPage />} />
-                  <Route path="/workflows" element={<WorkflowsPage />} />
                   <Route
-                    path="/workflows/:id"
-                    element={<WorkflowDetailPage />}
+                    path="/risk-analysis"
+                    element={<RiskAnalysisPage />}
                   />
                   <Route path="/admin" element={<AdminOverviewPage />} />
                   <Route path="/admin/users" element={<AdminUsersPage />} />
@@ -95,6 +97,7 @@ export default function App() {
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </SignedIn>
+
               <SignedOut>
                 <RedirectToSignIn />
               </SignedOut>
