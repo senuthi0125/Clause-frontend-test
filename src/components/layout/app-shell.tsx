@@ -1,19 +1,20 @@
 import type { ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { UserButton, useUser } from "@clerk/clerk-react";
 import {
   CalendarDays,
-  ClipboardList,
   FileText,
   GitBranch,
   LayoutDashboard,
+  Search,
   ShieldAlert,
   ShieldCheck,
-  SlidersHorizontal,
-  Users,
+  ShieldUser,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -23,12 +24,6 @@ const navItems = [
   { label: "Conflict Detection", icon: ShieldCheck, href: "/conflict-detection" },
   { label: "Calendar", icon: CalendarDays, href: "/calendar" },
   { label: "Workflows", icon: GitBranch, href: "/workflows" },
-];
-
-const adminNavItems = [
-  { label: "Admin Overview", icon: SlidersHorizontal, href: "/admin" },
-  { label: "User Management", icon: Users, href: "/admin/users" },
-  { label: "Audit Logs", icon: ClipboardList, href: "/admin/audit" },
 ];
 
 type AppShellProps = {
@@ -69,6 +64,7 @@ export function AppShell({
               <nav className="space-y-1.5">
                 {navItems.map((item) => {
                   const Icon = item.icon;
+
                   return (
                     <NavLink
                       key={item.label}
@@ -76,34 +72,7 @@ export function AppShell({
                       end={item.href === "/"}
                       className={({ isActive }) =>
                         cn(
-                          "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm transition cursor-pointer",
-                          isActive
-                            ? "bg-white text-slate-900 shadow-sm"
-                            : "text-slate-300 hover:bg-white/5 hover:text-white"
-                        )
-                      }
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                    </NavLink>
-                  );
-                })}
-              </nav>
-
-              <div className="mt-5 px-2 pb-2 text-xs uppercase tracking-[0.16em] text-slate-400">
-                Admin Controls
-              </div>
-              <nav className="space-y-1.5">
-                {adminNavItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <NavLink
-                      key={item.label}
-                      to={item.href}
-                      end={item.href === "/admin"}
-                      className={({ isActive }) =>
-                        cn(
-                          "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm transition cursor-pointer",
+                          "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm transition",
                           isActive
                             ? "bg-white text-slate-900 shadow-sm"
                             : "text-slate-300 hover:bg-white/5 hover:text-white"
@@ -136,11 +105,9 @@ export function AppShell({
                       key={item.name}
                       className="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3"
                     >
-                      <div>
-                        <p className="text-sm text-slate-100">{item.name}</p>
-                        <p className="text-xs text-slate-400">
-                          From backend data
-                        </p>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-slate-100">{item.name}</p>
+                        <p className="text-xs text-slate-400">From backend data</p>
                       </div>
                       <Badge
                         variant="secondary"
@@ -153,27 +120,31 @@ export function AppShell({
                 )}
               </div>
             </ScrollArea>
-
-            <UserCard />
           </div>
         </aside>
 
         <main className="min-w-0 bg-slate-100">
           <div className="border-b border-slate-200 bg-white px-5 py-4 md:px-7">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                <p className="text-sm text-slate-500">Welcome back</p>
+                <h2 className="text-2xl font-semibold leading-tight tracking-tight text-slate-900 md:text-3xl">
                   {title}
                 </h2>
                 {subtitle ? (
-                  <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+                  <p className="mt-1 max-w-2xl text-sm text-slate-500">{subtitle}</p>
                 ) : null}
               </div>
-              {actions ? (
-                <div className="flex flex-wrap items-center gap-2">{actions}</div>
-              ) : null}
+
+              <div className="flex items-center gap-3">
+                {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+                <TopAdminButton />
+                <TopSearchBar />
+                <TopUserAvatar />
+              </div>
             </div>
           </div>
+
           <div className="px-5 py-5 md:px-7">{children}</div>
         </main>
       </div>
@@ -181,35 +152,68 @@ export function AppShell({
   );
 }
 
-function UserCard() {
+function TopSearchBar() {
+  return (
+    <div className="relative w-full sm:w-[320px] lg:w-[430px]">
+      <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <Input
+        placeholder="Search contracts, parties, clauses..."
+        className="h-14 rounded-2xl border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-slate-200"
+      />
+    </div>
+  );
+}
+
+function TopUserAvatar() {
+  return (
+    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <UserButton
+        afterSignOutUrl="/sign-in"
+        appearance={{
+          elements: {
+            avatarBox: "h-10 w-10",
+            userButtonAvatarBox: "h-10 w-10",
+            userButtonTrigger:
+              "flex h-10 w-10 items-center justify-center rounded-full overflow-hidden",
+          },
+        }}
+      />
+    </div>
+  );
+}
+
+function TopAdminButton() {
   const { user, isLoaded } = useUser();
-  const displayName =
-    user?.fullName ||
-    user?.username ||
-    user?.primaryEmailAddress?.emailAddress ||
-    "Signed in";
-  const email = user?.primaryEmailAddress?.emailAddress ?? "";
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  if (!isLoaded) return null;
+
+  const role =
+    (user?.publicMetadata?.role as string | undefined) ||
+    (user?.unsafeMetadata?.role as string | undefined) ||
+    "";
+
+  const isAdmin = role.toLowerCase() === "admin";
+
+  if (!isAdmin) return null;
+
+  const isAdminPage = location.pathname.startsWith("/admin");
 
   return (
-    <div className="m-4 rounded-[24px] border border-slate-200 bg-white p-4 text-slate-900 shadow-sm">
-      <div className="flex items-center gap-3">
-        <UserButton
-          afterSignOutUrl="/sign-in"
-          appearance={{
-            elements: { avatarBox: "h-10 w-10" },
-          }}
-        />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">
-            {isLoaded ? displayName : "Loading..."}
-          </p>
-          {email ? (
-            <p className="truncate text-xs text-slate-500">{email}</p>
-          ) : (
-            <p className="text-xs text-slate-500">Click avatar to sign out</p>
-          )}
-        </div>
-      </div>
-    </div>
+    <Button
+      type="button"
+      onClick={() => navigate("/admin")}
+      className={cn(
+        "h-14 rounded-2xl px-5 text-sm font-semibold shadow-sm",
+        isAdminPage
+          ? "bg-slate-900 text-white hover:bg-slate-900"
+          : "border border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
+      )}
+      variant="outline"
+    >
+      <ShieldUser className="mr-2 h-4 w-4" />
+      Admin
+    </Button>
   );
 }
