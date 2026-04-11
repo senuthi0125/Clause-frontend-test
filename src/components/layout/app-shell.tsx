@@ -1,13 +1,17 @@
 import { Link, useLocation } from "react-router-dom";
 import {
+  Bell,
   CalendarDays,
+  CheckCheck,
   FileText,
   LayoutDashboard,
+  LockKeyhole,
+  Search,
   Shield,
   ShieldAlert,
   Sparkles,
-  Search,
-  LockKeyhole,
+  Users,
+  ScrollText,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/clerk-react";
 import { cn } from "@/lib/utils";
@@ -40,14 +44,15 @@ export function AppShell({
   const location = useLocation();
   const { user } = useUser();
 
-  const role =
-    String(user?.publicMetadata?.role || user?.unsafeMetadata?.role || "")
-      .trim()
-      .toLowerCase();
+  const role = String(
+    user?.publicMetadata?.role || user?.unsafeMetadata?.role || ""
+  )
+    .trim()
+    .toLowerCase();
 
   const isAdmin = role === "admin";
 
-  const navigation = [
+  const mainNavigation = [
     {
       label: "Dashboard",
       href: "/",
@@ -78,15 +83,34 @@ export function AppShell({
       href: "/risk-analysis",
       icon: ShieldAlert,
     },
-    ...(isAdmin
-      ? [
-          {
-            label: "Admin",
-            href: "/admin",
-            icon: LockKeyhole,
-          },
-        ]
-      : []),
+  ];
+
+  const adminNavigation = [
+    {
+      label: "Admin Dashboard",
+      href: "/admin",
+      icon: LockKeyhole,
+    },
+    {
+      label: "User Management",
+      href: "/admin/users",
+      icon: Users,
+    },
+    {
+      label: "Approvals",
+      href: "/admin/approvals",
+      icon: CheckCheck,
+    },
+    {
+      label: "Audit Logs",
+      href: "/admin/audit",
+      icon: ScrollText,
+    },
+    {
+      label: "Notifications & Alerts",
+      href: "/admin/notifications",
+      icon: Bell,
+    },
   ];
 
   return (
@@ -110,9 +134,9 @@ export function AppShell({
             </div>
           </div>
 
-          <nav className="px-3 py-4">
+          <nav className="overflow-y-auto px-3 py-4">
             <div className="space-y-2">
-              {navigation.map((item) => {
+              {mainNavigation.map((item) => {
                 const isActive =
                   item.href === "/"
                     ? location.pathname === item.href
@@ -137,6 +161,37 @@ export function AppShell({
                 );
               })}
             </div>
+
+            {isAdmin ? (
+              <div className="mt-8">
+                <p className="px-3 text-[11px] uppercase tracking-[0.28em] text-blue-100/65">
+                  Admin
+                </p>
+
+                <div className="mt-3 space-y-2">
+                  {adminNavigation.map((item) => {
+                    const isActive = location.pathname.startsWith(item.href);
+                    const Icon = item.icon;
+
+                    return (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        className={cn(
+                          "flex items-center gap-3 rounded-[20px] px-4 py-3 text-[14px] transition",
+                          isActive
+                            ? "bg-white text-slate-950 shadow-sm"
+                            : "text-blue-50 hover:bg-white/8"
+                        )}
+                      >
+                        <Icon className="h-[18px] w-[18px] shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
 
             <div className="mt-10">
               <p className="px-3 text-[11px] uppercase tracking-[0.28em] text-blue-100/65">
@@ -191,18 +246,18 @@ export function AppShell({
                 ) : null}
               </div>
 
-              <div className="flex flex-col items-stretch gap-3 xl:min-w-[520px] xl:flex-row xl:items-center xl:justify-end">
+              <div className="flex flex-col items-stretch gap-3 xl:min-w-[620px] xl:flex-row xl:items-center xl:justify-end">
                 {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
 
-                <div className="flex items-center gap-3">
-                  <div className="hidden h-12 min-w-[360px] items-center gap-3 rounded-[18px] border border-slate-200 bg-white px-4 shadow-sm xl:flex">
+                <div className="flex items-center justify-end gap-3">
+                  <div className="hidden h-12 min-w-[420px] items-center gap-3 rounded-[18px] border border-slate-200 bg-white px-4 shadow-sm xl:flex">
                     <Search className="h-4 w-4 text-slate-400" />
                     <span className="text-sm text-slate-400">
                       Search contracts, parties, clauses...
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm">
                     <UserButton
                       afterSignOutUrl="/sign-in"
                       appearance={{
@@ -211,11 +266,6 @@ export function AppShell({
                         },
                       }}
                     />
-                    <span className="hidden max-w-[140px] truncate text-sm font-medium text-slate-700 md:inline">
-                      {user?.fullName ||
-                        user?.primaryEmailAddress?.emailAddress ||
-                        "Account"}
-                    </span>
                   </div>
                 </div>
               </div>

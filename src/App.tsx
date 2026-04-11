@@ -18,6 +18,8 @@ import RiskAnalysisPage from "./pages/risk-analysis-page";
 import AdminOverviewPage from "./pages/admin-overview-page";
 import AdminUsersPage from "./pages/admin-users-page";
 import AdminAuditPage from "./pages/admin-audit-page";
+import AdminApprovalsPage from "./pages/admin-approvals-page";
+import AdminNotificationsPage from "./pages/admin-notifications-page";
 import { AuthBridge } from "./components/auth-bridge";
 
 function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -93,7 +95,15 @@ export default function App() {
                   />
                   <Route path="/admin" element={<AdminOverviewPage />} />
                   <Route path="/admin/users" element={<AdminUsersPage />} />
+                  <Route
+                    path="/admin/approvals"
+                    element={<AdminApprovalsPage />}
+                  />
                   <Route path="/admin/audit" element={<AdminAuditPage />} />
+                  <Route
+                    path="/admin/notifications"
+                    element={<AdminNotificationsPage />}
+                  />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </SignedIn>
