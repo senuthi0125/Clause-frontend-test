@@ -10,7 +10,10 @@
       "Bash(curl -s http://localhost:8000/api/templates/)",
       "Bash(python -c \"from pymongo import MongoClient; c=MongoClient\\(''mongodb://localhost:27017''\\); print\\(''DBs:'', c.list_database_names\\(\\)\\); [print\\(f''  {d}:'', c[d].list_collection_names\\(\\)\\) for d in c.list_database_names\\(\\) if d not in \\(''admin'',''local'',''config''\\)]\")",
       "Bash(python -c \":*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Read(//c/Users/HP/Desktop/Clause all/backend/clause-backend/**)",
+      "Bash(pip show:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -X POST http://localhost:8000/api/contracts/upload)"
     ]
   }
 }
