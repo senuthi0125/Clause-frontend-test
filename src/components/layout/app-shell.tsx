@@ -5,13 +5,13 @@ import {
   CheckCheck,
   FileText,
   LayoutDashboard,
-  LockKeyhole,
   Search,
   Shield,
   ShieldAlert,
   Sparkles,
   Users,
   ScrollText,
+  LockKeyhole,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/clerk-react";
 import { cn } from "@/lib/utils";
@@ -246,7 +246,7 @@ export function AppShell({
                 ) : null}
               </div>
 
-              <div className="flex flex-col items-stretch gap-3 xl:min-w-[620px] xl:flex-row xl:items-center xl:justify-end">
+              <div className="flex flex-col items-stretch gap-3 xl:min-w-[720px] xl:flex-row xl:items-center xl:justify-end">
                 {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
 
                 <div className="flex items-center justify-end gap-3">
@@ -256,6 +256,21 @@ export function AppShell({
                       Search contracts, parties, clauses...
                     </span>
                   </div>
+
+                  {isAdmin ? (
+                    <Link
+                      to="/admin"
+                      className={cn(
+                        "inline-flex h-12 items-center gap-2 rounded-[18px] border px-4 text-sm font-medium shadow-sm transition",
+                        location.pathname.startsWith("/admin")
+                          ? "border-slate-900 bg-slate-900 text-white"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                      )}
+                    >
+                      <LockKeyhole className="h-4 w-4" />
+                      <span>Admin</span>
+                    </Link>
+                  ) : null}
 
                   <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm">
                     <UserButton

@@ -149,9 +149,7 @@ export default function ContractsPage() {
       }
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to upload contract."
+        err instanceof Error ? err.message : "Failed to upload contract."
       );
     } finally {
       setUploading(false);
@@ -164,65 +162,69 @@ export default function ContractsPage() {
       title="Contracts"
       subtitle="Browse live contracts from the backend and open detailed views."
       contractGroups={contractGroups}
-      actions={
-        <>
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            accept=".pdf,.doc,.docx,.txt"
-            onChange={handleUploadChange}
-          />
-
-          <Button
-            variant="outline"
-            onClick={handleUploadClick}
-            disabled={uploading}
-          >
-            {uploading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Upload className="mr-2 h-4 w-4" />
-            )}
-            Upload contract
-          </Button>
-
-          <Button asChild>
-            <Link to="/contracts/new">
-              <Plus className="mr-2 h-4 w-4" />
-              New contract
-            </Link>
-          </Button>
-        </>
-      }
     >
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="hidden"
+        accept=".pdf,.doc,.docx,.txt"
+        onChange={handleUploadChange}
+      />
+
       <Card className="border border-slate-200 bg-white shadow-sm">
         <CardContent className="p-4">
-          <div className="grid gap-3 md:grid-cols-[1fr_180px_auto]">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by title"
-                className="pl-9"
-              />
+          <div className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by title"
+                  className="h-11 pl-9"
+                />
+              </div>
+
+              <select
+                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option value="">All statuses</option>
+                <option value="draft">Draft</option>
+                <option value="active">Active</option>
+                <option value="expired">Expired</option>
+                <option value="terminated">Terminated</option>
+                <option value="renewed">Renewed</option>
+              </select>
+
+              <Button onClick={loadContracts} className="h-11 rounded-xl">
+                Apply filters
+              </Button>
             </div>
 
-            <select
-              className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option value="">All statuses</option>
-              <option value="draft">Draft</option>
-              <option value="active">Active</option>
-              <option value="expired">Expired</option>
-              <option value="terminated">Terminated</option>
-              <option value="renewed">Renewed</option>
-            </select>
+            <div className="flex flex-wrap items-center justify-center gap-3 border-t border-slate-100 pt-1">
+              <Button
+                variant="outline"
+                onClick={handleUploadClick}
+                disabled={uploading}
+                className="h-11 rounded-xl"
+              >
+                {uploading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="mr-2 h-4 w-4" />
+                )}
+                Upload contract
+              </Button>
 
-            <Button onClick={loadContracts}>Apply filters</Button>
+              <Button asChild className="h-11 rounded-xl">
+                <Link to="/contracts/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  New contract
+                </Link>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -306,24 +308,25 @@ export default function ContractsPage() {
                 </div>
 
                 <div
-                  className="flex gap-2"
+                  className="flex flex-wrap gap-2"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {contract.workflow_id ? (
-                    <Button variant="outline" asChild>
+                    <Button variant="outline" asChild className="rounded-xl">
                       <Link to={`/workflows/${contract.workflow_id}`}>
                         Open workflow
                       </Link>
                     </Button>
                   ) : null}
 
-                  <Button variant="outline" asChild>
+                  <Button variant="outline" asChild className="rounded-xl">
                     <Link to="/conflict-detection">Compare</Link>
                   </Button>
 
                   <Button
                     variant="destructive"
                     onClick={() => deleteContract(contract.id)}
+                    className="rounded-xl"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete
