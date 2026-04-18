@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw, ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -106,12 +106,6 @@ export default function ConflictDetectionPage() {
       title="Conflict Detection"
       subtitle="Compare contracts and detect clause conflicts using the backend."
       contractGroups={contractGroups}
-      actions={
-        <Button variant="outline" onClick={loadContracts}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
-      }
     >
       {error && (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
