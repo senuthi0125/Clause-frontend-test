@@ -64,6 +64,29 @@ function badgeClass(value?: string | null) {
   }
 }
 
+function getRiskBadgeLabel(contract: Contract) {
+  const riskScore = (contract as Contract & { risk_score?: number | null })
+    .risk_score;
+
+  if (typeof riskScore === "number" && !Number.isNaN(riskScore)) {
+    return `Risk ${riskScore}`;
+  }
+
+  if (contract.risk_level) {
+    return `${formatLabel(contract.risk_level)} risk`;
+  }
+
+  return "Unrated";
+}
+
+function getRiskBadgeClass(contract: Contract) {
+  if (contract.risk_level) {
+    return badgeClass(contract.risk_level);
+  }
+
+  return "bg-slate-100 text-slate-700";
+}
+
 export default function ContractsPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -269,8 +292,8 @@ export default function ContractsPage() {
                   <Badge className={badgeClass(contract.workflow_stage)}>
                     {formatLabel(contract.workflow_stage)}
                   </Badge>
-                  <Badge className={badgeClass(contract.risk_level)}>
-                    {formatLabel(contract.risk_level || "unrated")}
+                  <Badge className={getRiskBadgeClass(contract)}>
+                    {getRiskBadgeLabel(contract)}
                   </Badge>
                 </div>
               </div>
