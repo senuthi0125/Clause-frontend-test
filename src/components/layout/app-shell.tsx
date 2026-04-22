@@ -19,6 +19,7 @@ import {
   LockKeyhole,
   Workflow,
   UploadCloud,
+  Settings,
   X,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/clerk-react";
@@ -117,6 +118,7 @@ export function AppShell({
     { label: "Conflict Detection", href: "/conflict-detection", icon: Shield },
     { label: "Calendar", href: "/calendar", icon: CalendarDays },
     { label: "Risk Analysis", href: "/risk-analysis", icon: ShieldAlert },
+    { label: "Settings", href: "/settings", icon: Settings },
   ];
 
   const adminNavigation = [

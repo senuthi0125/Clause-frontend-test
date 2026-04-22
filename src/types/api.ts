@@ -321,3 +321,25 @@ export type AuditLogResponse = {
   per_page: number;
   total_pages: number;
 };
+
+// ─── User Preferences ────────────────────────────────────────
+
+export type WidgetVisibility = {
+  total_contracts?: boolean;
+  active_contracts?: boolean;
+  pending_approvals?: boolean;
+  high_risk?: boolean;
+};
+
+export type PinnedContract = {
+  id: string;
+  title: string;
+  status?: string;
+};
+
+export type UserPreferences = {
+  widget_visibility: WidgetVisibility;
+  default_contract_filter: string;
+  pinned_contracts: PinnedContract[];
+  accent_color: string;
+};

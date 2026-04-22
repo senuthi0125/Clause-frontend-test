@@ -23,6 +23,7 @@ import AdminNotificationsPage from "./pages/admin-notifications-page";
 import WorkflowsPage from "./pages/workflows-page";
 import WorkflowDetailPage from "./pages/workflow-detail-page";
 import UploadPipelinePage from "./pages/upload-pipeline-page";
+import SettingsPage from "./pages/settings-page";
 import { AuthBridge } from "./components/auth-bridge";
 import { ThemeProvider } from "./components/theme-provider";
 
@@ -160,6 +161,7 @@ export default function App() {
                     <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
                     <Route path="/admin/workflows" element={<WorkflowsPage />} />
                     <Route path="/admin/workflows/:id" element={<WorkflowDetailPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />
                   </Routes>

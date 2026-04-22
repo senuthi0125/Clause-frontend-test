@@ -15,6 +15,7 @@ import type {
   DraftResponse,
   Template,
   TemplatesResponse,
+  UserPreferences,
   UserRole,
   UsersListResponse,
   ValueByType,
@@ -404,6 +405,14 @@ export const api = {
 
   disconnectCalendar: () =>
     request<{ message: string }>("/api/calendar/disconnect", { method: "DELETE" }),
+
+  getPreferences: () => request<UserPreferences>("/api/preferences/"),
+
+  updatePreferences: (patch: Partial<UserPreferences>) =>
+    request<UserPreferences>("/api/preferences/", {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }),
 
   // ── Email / Notifications ──────────────────────────────────────────────────
   getEmailConfig: () =>
