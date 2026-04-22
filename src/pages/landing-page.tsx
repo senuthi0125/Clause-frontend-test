@@ -475,10 +475,7 @@ function FeaturesSection() {
             inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
           }`}
         >
-          <Badge className="mb-4 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-indigo-700 hover:bg-indigo-50">
-            <Zap className="mr-1.5 h-3.5 w-3.5" />
-            Core Capabilities
-          </Badge>
+          
           <h2 className="text-4xl font-bold tracking-tight text-slate-900 lg:text-5xl">
             Everything Contracts Need
           </h2>
