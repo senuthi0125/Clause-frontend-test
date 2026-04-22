@@ -395,6 +395,8 @@ export default function DashboardPage() {
       themed: true,
       iconWrap: "",
       accent: "",
+      cardBg:
+        "bg-violet-50 border-violet-100 dark:bg-violet-500/10 dark:border-violet-500/20",
     },
     {
       key: "active_contracts" as const,
@@ -406,6 +408,8 @@ export default function DashboardPage() {
       iconWrap:
         "bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20",
       accent: "text-emerald-600",
+      cardBg:
+        "bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20",
     },
     {
       key: "pending_approvals" as const,
@@ -417,6 +421,8 @@ export default function DashboardPage() {
       iconWrap:
         "bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20",
       accent: "text-amber-600",
+      cardBg:
+        "bg-amber-50 border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20",
     },
     {
       key: "high_risk" as const,
@@ -428,6 +434,8 @@ export default function DashboardPage() {
       iconWrap:
         "bg-gradient-to-br from-rose-500 to-red-500 text-white shadow-lg shadow-rose-500/20",
       accent: "text-rose-600",
+      cardBg:
+        "bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20",
     },
   ];
 
@@ -464,8 +472,8 @@ export default function DashboardPage() {
 
   return (
     <AppShell
-      title="Contract operations overview"
-      subtitle="Live overview of contracts, approvals, activity, and AI-powered risk signals."
+      title="Contract Overview"
+      subtitle="Live overview of Total Contracts, Active Contracts, Pending Approvals, and High Risk Items"
       contractGroups={contractGroups}
     >
       {error ? (
@@ -499,12 +507,12 @@ export default function DashboardPage() {
               return (
                 <Card
                   key={card.key}
-                  className="overflow-hidden rounded-3xl border border-slate-200/80 dark:border-white/8 bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+                  className={`overflow-hidden rounded-3xl border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${card.cardBg}`}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div className="space-y-3">
-                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-300">
                           {card.title}
                         </p>
                         <div className="flex items-end gap-2">
@@ -520,7 +528,9 @@ export default function DashboardPage() {
                             Live
                           </span>
                         </div>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">{card.helper}</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          {card.helper}
+                        </p>
                       </div>
 
                       <div
