@@ -23,7 +23,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-// ── Intersection observer ────────────────────────────────────────────────────
 function useInView(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
@@ -49,7 +48,6 @@ function useInView(threshold = 0.15) {
   return { ref, inView };
 }
 
-// ── Animated counter ─────────────────────────────────────────────────────────
 function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
   const [val, setVal] = useState(0);
   const { ref, inView } = useInView(0.3);
@@ -83,7 +81,6 @@ function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
   );
 }
 
-// ── Navbar ───────────────────────────────────────────────────────────────────
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
@@ -108,9 +105,9 @@ function Navbar() {
           </div>
           <div>
             <p className="text-[17px] font-bold tracking-tight text-slate-900">
-              clause
+              Clause
             </p>
-            <p className="text-[11px] text-slate-500">Contract workspace</p>
+            <p className="text-[11px] text-slate-500">Contract Workspace</p>
           </div>
         </div>
 
@@ -136,12 +133,12 @@ function Navbar() {
             to="/sign-in"
             className="hidden text-sm font-medium text-slate-600 transition-colors hover:text-slate-900 sm:block"
           >
-            Sign in
+            Sign In
           </Link>
 
           <Link to="/sign-up">
             <Button className="rounded-full bg-[#07153A] px-5 hover:bg-indigo-600">
-              Get started
+              Get Started
               <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </Link>
@@ -151,7 +148,6 @@ function Navbar() {
   );
 }
 
-// ── Hero visual ──────────────────────────────────────────────────────────────
 function MockDashboardCard() {
   const items = [
     {
@@ -184,7 +180,7 @@ function MockDashboardCard() {
         </div>
 
         <div className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-400 shadow-sm">
-          clause / dashboard
+          Dashboard
         </div>
 
         <div className="h-2 w-10 rounded-full bg-slate-200" />
@@ -242,7 +238,7 @@ function MockDashboardCard() {
         <div className="rounded-2xl border border-slate-200/70 bg-white">
           <div className="border-b border-slate-100 px-4 py-3">
             <p className="text-sm font-semibold text-slate-900">
-              Live contract pipeline
+              Live Contracts
             </p>
           </div>
 
@@ -273,7 +269,6 @@ function MockDashboardCard() {
   );
 }
 
-// ── Hero ─────────────────────────────────────────────────────────────────────
 function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-[#F8FAFC] pt-32 pb-20 lg:pt-36">
@@ -285,29 +280,28 @@ function HeroSection() {
 
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 px-6 lg:grid-cols-2">
         <div className="space-y-8">
-          <Badge className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-indigo-700 hover:bg-indigo-50">
-            <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-            AI-powered contract lifecycle management
+          <Badge className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-indigo-700 hover:bg-indigo-50"> 
+            Contract Lifecycle Management System
           </Badge>
 
           <div className="space-y-4">
             <h1 className="text-5xl font-bold leading-[1.05] tracking-tight text-slate-900 lg:text-6xl xl:text-7xl">
-              One workspace for
+              One Workspace For
               <span className="block bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                smarter contracts
+                All Contracts
               </span>
             </h1>
 
             <p className="max-w-xl text-lg leading-relaxed text-slate-500">
-              Draft, analyze, compare, approve, and track contracts in one
-              modern platform built for growing teams.
+              Draft, Analyze, Compare, Approve, and Track Contracts in one
+              platform built for growing teams.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
             <Link to="/sign-up">
               <Button className="rounded-full bg-[#07153A] px-7 py-6 text-[15px] hover:bg-indigo-600">
-                Start free
+                Start Free
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -317,7 +311,7 @@ function HeroSection() {
                 variant="outline"
                 className="rounded-full border-slate-300 px-7 py-6 text-[15px]"
               >
-                Sign in
+                Sign In
               </Button>
             </Link>
           </div>
@@ -352,7 +346,7 @@ function HeroSection() {
                 ))}
               </div>
               <p className="text-sm text-slate-500">
-                Trusted by legal, operations, and business teams
+                Trusted by Legal, Operations, and Business Teams
               </p>
             </div>
           </div>
@@ -361,7 +355,7 @@ function HeroSection() {
         <div className="relative">
           <div className="absolute -top-4 right-6 z-10 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 shadow-lg">
             <p className="text-sm font-medium text-slate-700">
-              AI risk check ready
+              AI Risk Analysis Ready
             </p>
           </div>
 
@@ -390,15 +384,14 @@ function HeroSection() {
   );
 }
 
-// ── Stats ────────────────────────────────────────────────────────────────────
 function StatsBar() {
   const { ref, inView } = useInView();
 
   const stats = [
-    { value: 12000, suffix: "+", label: "Contracts processed" },
-    { value: 96, suffix: "%", label: "Process visibility" },
-    { value: 3, suffix: "x", label: "Faster review cycles" },
-    { value: 500, suffix: "+", label: "Teams supported" },
+    { value: 12000, suffix: "+", label: "Contracts Processed" },
+    { value: 96, suffix: "%", label: "Process Visibility" },
+    { value: 3, suffix: "x", label: "Faster Review Cycles" },
+    { value: 500, suffix: "+", label: "Teams Supported" },
   ];
 
   return (
@@ -431,44 +424,43 @@ function StatsBar() {
   );
 }
 
-// ── Features ─────────────────────────────────────────────────────────────────
 function FeaturesSection() {
   const { ref, inView } = useInView();
 
   const features = [
     {
       icon: Sparkles,
-      title: "AI contract analysis",
+      title: "AI Contract Analysis",
       desc: "Surface risks, missing clauses, and key obligations instantly.",
       color: "bg-violet-50 text-violet-600",
     },
     {
       icon: Shield,
-      title: "Conflict detection",
+      title: "Conflict Detection",
       desc: "Compare contracts and identify cross-document contradictions early.",
       color: "bg-indigo-50 text-indigo-600",
     },
     {
       icon: Workflow,
-      title: "Approval workflows",
+      title: "Approval Workflows",
       desc: "Move agreements through clear, trackable internal approvals.",
       color: "bg-cyan-50 text-cyan-600",
     },
     {
       icon: CalendarDays,
-      title: "Renewal visibility",
+      title: "Renewal Visibility",
       desc: "Track deadlines, expiries, and renewal windows in one place.",
       color: "bg-rose-50 text-rose-600",
     },
     {
       icon: AlertTriangle,
-      title: "Risk scoring",
+      title: "Risk Scoring",
       desc: "Prioritize attention using clear risk indicators and summaries.",
       color: "bg-amber-50 text-amber-600",
     },
     {
       icon: Users,
-      title: "Team collaboration",
+      title: "Team Collaboration",
       desc: "Support legal, operations, and management with role-based access.",
       color: "bg-emerald-50 text-emerald-600",
     },
@@ -485,10 +477,10 @@ function FeaturesSection() {
         >
           <Badge className="mb-4 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-indigo-700 hover:bg-indigo-50">
             <Zap className="mr-1.5 h-3.5 w-3.5" />
-            Core capabilities
+            Core Capabilities
           </Badge>
           <h2 className="text-4xl font-bold tracking-tight text-slate-900 lg:text-5xl">
-            Everything contracts need
+            Everything Contracts Need
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-500">
             Built for teams that want better contract control without messy
@@ -529,24 +521,23 @@ function FeaturesSection() {
   );
 }
 
-// ── Benefits / proof ─────────────────────────────────────────────────────────
 function BenefitsSection() {
   const { ref, inView } = useInView();
 
   const items = [
     {
       icon: SearchCheck,
-      title: "Reduce surprises",
+      title: "Reduce Surprises",
       desc: "Spot risky clauses and hidden conflicts before they slow down execution.",
     },
     {
       icon: BarChart3,
-      title: "Improve visibility",
+      title: "Improve Visibility",
       desc: "See pipeline health, approvals, and risk signals across your contract repository.",
     },
     {
       icon: Clock3,
-      title: "Move faster",
+      title: "Move Faster",
       desc: "Cut manual review effort and keep agreements moving through the business.",
     },
   ];
@@ -598,7 +589,6 @@ function BenefitsSection() {
   );
 }
 
-// ── How it works ──────────────────────────────────────────────────────────────
 function HowItWorksSection() {
   const { ref, inView } = useInView();
 
@@ -606,19 +596,19 @@ function HowItWorksSection() {
     {
       num: "01",
       icon: Upload,
-      title: "Upload or create",
+      title: "Upload or Create",
       desc: "Bring in your existing contracts or start from a structured template.",
     },
     {
       num: "02",
       icon: Sparkles,
-      title: "Analyze and compare",
+      title: "Analyze and Compare",
       desc: "Run AI analysis, review risks, and detect conflicts across contracts.",
     },
     {
       num: "03",
       icon: CheckCircle2,
-      title: "Approve and track",
+      title: "Approve and Track",
       desc: "Move through workflows, approvals, and deadlines in one place.",
     },
   ];
@@ -684,7 +674,6 @@ function HowItWorksSection() {
   );
 }
 
-// ── Testimonials ─────────────────────────────────────────────────────────────
 function TestimonialsSection() {
   const { ref, inView } = useInView();
 
@@ -769,7 +758,6 @@ function TestimonialsSection() {
   );
 }
 
-// ── CTA ──────────────────────────────────────────────────────────────────────
 function CTASection() {
   const { ref, inView } = useInView();
 
@@ -794,9 +782,9 @@ function CTASection() {
             </div>
 
             <h2 className="text-4xl font-bold tracking-tight text-white md:text-5xl">
-              Ready to manage contracts
+              Ready to Manage Contracts
               <br className="hidden md:block" />
-              in one place?
+              in One Place?
             </h2>
 
             <p className="mx-auto max-w-lg text-lg text-blue-100/70">
@@ -807,7 +795,7 @@ function CTASection() {
             <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
               <Link to="/sign-up">
                 <Button className="rounded-full bg-white px-8 py-6 text-[15px] text-slate-900 hover:bg-indigo-50">
-                  Start free today
+                  Start Free Today
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -817,7 +805,7 @@ function CTASection() {
                   variant="outline"
                   className="rounded-full border-white/25 bg-transparent px-8 py-6 text-[15px] text-white hover:bg-white/10 hover:text-white"
                 >
-                  Sign in
+                  Sign In
                 </Button>
               </Link>
             </div>
@@ -832,7 +820,6 @@ function CTASection() {
   );
 }
 
-// ── Footer ───────────────────────────────────────────────────────────────────
 function Footer() {
   return (
     <footer className="border-t border-slate-200/70 bg-white py-12">
@@ -842,7 +829,7 @@ function Footer() {
             <FileText className="h-3.5 w-3.5" />
           </div>
           <span className="text-[15px] font-semibold text-slate-800">
-            clause
+            Clause
           </span>
         </div>
 
@@ -866,7 +853,6 @@ function Footer() {
   );
 }
 
-// ── Page ─────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   return (
     <div className="font-sans antialiased">
