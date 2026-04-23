@@ -6,6 +6,7 @@ import {
   CheckCheck,
   FileText,
   LayoutDashboard,
+  Layers,
   Menu,
   Monitor,
   Moon,
@@ -25,6 +26,7 @@ import {
 import { UserButton, useUser } from "@clerk/clerk-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
+import { useRole } from "@/hooks/use-role";
 
 type ContractGroup = {
   name: string;
@@ -82,19 +84,10 @@ export function AppShell({
 }: AppShellProps) {
   const location = useLocation();
   const { user } = useUser();
+  const { role, isAdmin, isManager, isAdminOrManager } = useRole();
   const [adminMode, setAdminMode] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   void contractGroups;
-
-  const role = String(
-    user?.publicMetadata?.role || user?.unsafeMetadata?.role || ""
-  )
-    .trim()
-    .toLowerCase();
-
-  const isAdmin = role === "admin";
-  const isManager = role === "manager";
-  const isAdminOrManager = isAdmin || isManager;
 
   useEffect(() => {
     if (!isAdminOrManager) {
@@ -125,6 +118,7 @@ export function AppShell({
     { label: "Admin Dashboard", href: "/admin", icon: LockKeyhole },
     { label: "User Management", href: "/admin/users", icon: Users },
     { label: "Workflows", href: "/admin/workflows", icon: Workflow },
+    { label: "Workflow Templates", href: "/admin/workflow-templates", icon: Layers },
     { label: "Approvals", href: "/admin/approvals", icon: CheckCheck },
     { label: "Audit Logs", href: "/admin/audit", icon: ScrollText },
     { label: "Notifications & Alerts", href: "/admin/notifications", icon: Bell },

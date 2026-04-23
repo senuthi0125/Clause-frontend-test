@@ -326,7 +326,7 @@ export default function WorkflowTemplatesPage() {
   const load = () => {
     setLoading(true);
     api.listWorkflowTemplates()
-      .then((r) => setTemplates(r.templates))
+      .then((r) => setTemplates(Array.isArray(r) ? r : (r as { templates?: WorkflowTemplate[] }).templates ?? []))
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load."))
       .finally(() => setLoading(false));
   };

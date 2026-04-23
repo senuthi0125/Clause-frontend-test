@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useUser } from "@clerk/clerk-react";
+import { useRole } from "@/hooks/use-role";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,12 +39,7 @@ function badgeClass(value?: string | null) {
 
 export default function WorkflowDetailPage() {
   const { id } = useParams();
-  const { user } = useUser();
-
-  const role = String(
-    user?.publicMetadata?.role || user?.unsafeMetadata?.role || ""
-  ).trim().toLowerCase();
-  const canManage = role === "admin" || role === "manager";
+  const { isAdminOrManager: canManage } = useRole();
 
   const [workflow, setWorkflow] = useState<Workflow | null>(null);
   const [contract, setContract] = useState<Contract | null>(null);

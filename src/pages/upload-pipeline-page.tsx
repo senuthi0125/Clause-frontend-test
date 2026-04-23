@@ -10,9 +10,12 @@ import {
   Download,
   Plus,
   Edit3,
+  Save,
   ShieldAlert,
   ShieldCheck,
   XCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
@@ -213,125 +216,284 @@ function UploadStep({
   );
 }
 
-// ─── Step 2 — Review & Analysis ──────────────────────────────────────────────
+// ─── Step 2 — Review, Edit & Analysis ───────────────────────────────────────
+
+const CONTRACT_TYPES = [
+  "service_agreement","nda","employment","vendor","licensing","partnership","other",
+] as const;
 
 function ReviewStep({
   contract,
   analysis,
   analysing,
+  onContractUpdated,
   onContinue,
 }: {
   contract: Contract;
   analysis: AiAnalysisResponse | null;
   analysing: boolean;
+  onContractUpdated: (c: Contract) => void;
   onContinue: () => void;
 }) {
-  return (
-    <div className="grid gap-5 lg:grid-cols-2">
-      {/* Contract meta */}
-      <Card className="border border-slate-200 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-blue-500" />
-            Uploaded Contract
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <Row label="Title"        value={contract.title} />
-          <Row label="Type"         value={formatLabel(contract.contract_type)} />
-          <Row label="Status"       value={formatLabel(contract.status)} />
-          <Row label="Uploaded"     value={formatDate(contract.created_at)} />
-          <Row label="Version"      value={String(contract.current_version ?? 1)} />
-        </CardContent>
-      </Card>
+  const [editOpen, setEditOpen] = useState(false);
 
-      {/* AI analysis */}
-      <Card className="border border-slate-200 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShieldAlert className="h-5 w-5 text-violet-500" />
-            AI Risk Analysis
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {analysing ? (
-            <div className="flex flex-col items-center gap-3 py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
-              <p className="text-sm text-slate-500">Running AI analysis…</p>
-            </div>
-          ) : analysis ? (
-            <div className="space-y-4">
-              {/* Risk bar */}
-              <div>
-                <div className="mb-1 flex items-center justify-between text-sm">
-                  <span className="font-medium text-slate-700">Risk Score</span>
-                  <Badge className={severityClass(analysis.risk_level)}>
-                    {formatLabel(analysis.risk_level)} — {analysis.risk_score ?? "N/A"}
-                  </Badge>
+  // Local edit state
+  const [title,      setTitle]      = useState(contract.title);
+  const [cType,      setCType]      = useState(contract.contract_type);
+  const [startDate,  setStartDate]  = useState(contract.start_date?.slice(0, 10) ?? "");
+  const [endDate,    setEndDate]    = useState(contract.end_date?.slice(0, 10) ?? "");
+  const [value,      setValue]      = useState(String(contract.value ?? ""));
+  const [desc,       setDesc]       = useState(contract.description ?? "");
+  const [saving,     setSaving]     = useState(false);
+  const [saveMsg,    setSaveMsg]    = useState<string | null>(null);
+
+  async function handleSave() {
+    setSaving(true); setSaveMsg(null);
+    try {
+      const payload: Record<string, unknown> = {
+        title: title.trim() || contract.title,
+        contract_type: cType,
+        start_date: startDate || contract.start_date,
+        end_date:   endDate   || contract.end_date,
+        description: desc || null,
+      };
+      if (value !== "") payload.value = parseFloat(value) || null;
+      const updated = await api.updateContract(contract.id, payload);
+      onContractUpdated(updated);
+      setSaveMsg("✓ Saved");
+      setTimeout(() => { setSaveMsg(null); setEditOpen(false); }, 1500);
+    } catch {
+      setSaveMsg("✗ Save failed");
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Top grid: contract summary + AI analysis */}
+      <div className="grid gap-5 lg:grid-cols-2">
+        {/* Contract meta */}
+        <Card className="border border-slate-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-500" />
+              Uploaded Contract
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <Row label="Title"    value={contract.title} />
+            <Row label="Type"     value={formatLabel(contract.contract_type)} />
+            <Row label="Status"   value={formatLabel(contract.status)} />
+            <Row label="Uploaded" value={formatDate(contract.created_at)} />
+            <Row label="Version"  value={String(contract.current_version ?? 1)} />
+          </CardContent>
+        </Card>
+
+        {/* AI analysis */}
+        <Card className="border border-slate-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-violet-500" />
+              AI Risk Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {analysing ? (
+              <div className="flex flex-col items-center gap-3 py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+                <p className="text-sm text-slate-500">Running AI analysis…</p>
+              </div>
+            ) : analysis ? (
+              <div className="space-y-4">
+                <div>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="font-medium text-slate-700">Risk Score</span>
+                    <Badge className={severityClass(analysis.risk_level)}>
+                      {formatLabel(analysis.risk_level)} — {analysis.risk_score ?? "N/A"}
+                    </Badge>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className={`h-2 rounded-full transition-all ${riskBarColor(analysis.risk_level)}`}
+                      style={{ width: `${analysis.risk_score ?? 0}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                  <div
-                    className={`h-2 rounded-full transition-all ${riskBarColor(analysis.risk_level)}`}
-                    style={{ width: `${analysis.risk_score ?? 0}%` }}
-                  />
-                </div>
+                {analysis.summary && (
+                  <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-700 leading-relaxed">
+                    {analysis.summary}
+                  </p>
+                )}
+                {(analysis.risk_factors?.length ?? 0) > 0 && (
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">Risk Factors</p>
+                    <ul className="space-y-1">
+                      {analysis.risk_factors!.map((f, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                          <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" />{f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {(analysis.recommendations?.length ?? 0) > 0 && (
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">Recommendations</p>
+                    <ul className="space-y-1">
+                      {analysis.recommendations!.map((r, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                          <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-500" />{r}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">Analysis unavailable.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Collapsible Edit Details ───────────────────────────────────────── */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <button
+          onClick={() => setEditOpen((o) => !o)}
+          className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-slate-50"
+        >
+          <div className="flex items-center gap-2">
+            <Edit3 className="h-4 w-4 text-blue-500" />
+            <span className="font-medium text-slate-800">Edit Contract Details</span>
+            <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs text-blue-600">
+              Fix AI-extracted fields before saving
+            </span>
+          </div>
+          {editOpen
+            ? <ChevronUp className="h-4 w-4 text-slate-400" />
+            : <ChevronDown className="h-4 w-4 text-slate-400" />
+          }
+        </button>
+
+        {editOpen && (
+          <div className="border-t border-slate-100 px-5 pb-5 pt-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Title */}
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Contract Title
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm outline-none focus:border-blue-400 focus:bg-white"
+                />
               </div>
 
-              {analysis.summary && (
-                <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-700 leading-relaxed">
-                  {analysis.summary}
-                </p>
-              )}
+              {/* Type */}
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Contract Type
+                </label>
+                <select
+                  value={cType}
+                  onChange={(e) => setCType(e.target.value as typeof cType)}
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm outline-none focus:border-blue-400 focus:bg-white"
+                >
+                  {CONTRACT_TYPES.map((t) => (
+                    <option key={t} value={t}>{formatLabel(t)}</option>
+                  ))}
+                </select>
+              </div>
 
-              {(analysis.risk_factors?.length ?? 0) > 0 && (
-                <div>
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Risk Factors
-                  </p>
-                  <ul className="space-y-1">
-                    {analysis.risk_factors!.map((f, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
-                        <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              {/* Value */}
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Contract Value (USD)
+                </label>
+                <input
+                  type="number"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  placeholder="e.g. 50000"
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm outline-none focus:border-blue-400 focus:bg-white"
+                />
+              </div>
 
-              {(analysis.recommendations?.length ?? 0) > 0 && (
-                <div>
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Recommendations
-                  </p>
-                  <ul className="space-y-1">
-                    {analysis.recommendations!.map((r, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
-                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-500" />
-                        {r}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              {/* Start date */}
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm outline-none focus:border-blue-400 focus:bg-white"
+                />
+              </div>
+
+              {/* End date */}
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm outline-none focus:border-blue-400 focus:bg-white"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Description <span className="font-normal normal-case text-slate-400">(optional)</span>
+                </label>
+                <textarea
+                  value={desc}
+                  onChange={(e) => setDesc(e.target.value)}
+                  rows={2}
+                  placeholder="Brief description of this contract…"
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:bg-white"
+                />
+              </div>
             </div>
-          ) : (
-            <p className="text-sm text-slate-500">Analysis unavailable.</p>
-          )}
-        </CardContent>
-      </Card>
 
-      <div className="lg:col-span-2 flex justify-end">
+            <div className="mt-4 flex items-center justify-end gap-3">
+              {saveMsg && (
+                <span className={`text-sm font-medium ${saveMsg.startsWith("✓") ? "text-green-600" : "text-red-600"}`}>
+                  {saveMsg}
+                </span>
+              )}
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={saving}
+                className="rounded-xl"
+              >
+                {saving
+                  ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Saving…</>
+                  : <><Save className="mr-1.5 h-3.5 w-3.5" /> Save Details</>
+                }
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Continue button */}
+      <div className="flex justify-end">
         <Button
           onClick={onContinue}
           disabled={analysing}
           className="rounded-xl px-8"
         >
-          {analysing ? (
-            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analysing…</>
-          ) : (
-            "Continue to Conflict Check →"
-          )}
+          {analysing
+            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analysing…</>
+            : "Continue to Conflict Check →"
+          }
         </Button>
       </div>
     </div>
@@ -710,6 +872,7 @@ export default function UploadPipelinePage() {
             contract={contract}
             analysis={analysis}
             analysing={analysing}
+            onContractUpdated={(updated) => setContract(updated)}
             onContinue={handleContinueToConflict}
           />
         )}

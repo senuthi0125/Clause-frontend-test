@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus, Search, Trash2, Upload } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
+import { useRole } from "@/hooks/use-role";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -141,12 +142,7 @@ function getRiskBadgeClass(contract: Contract) {
 
 export default function ContractsPage() {
   const navigate = useNavigate();
-  const { user } = useUser();
-
-  const role = String(
-    user?.publicMetadata?.role || user?.unsafeMetadata?.role || ""
-  ).trim().toLowerCase();
-  const isAdminOrManager = role === "admin" || role === "manager";
+  const { isAdminOrManager } = useRole();
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
