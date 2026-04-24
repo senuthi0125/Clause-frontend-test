@@ -20,6 +20,7 @@ import AdminUsersPage from "./pages/admin-users-page";
 import AdminAuditPage from "./pages/admin-audit-page";
 import AdminApprovalsPage from "./pages/admin-approvals-page";
 import AdminNotificationsPage from "./pages/admin-notifications-page";
+import ReportsPage from "./pages/reports-page";
 import WorkflowsPage from "./pages/workflows-page";
 import WorkflowDetailPage from "./pages/workflow-detail-page";
 import WorkflowTemplatesPage from "./pages/workflow-templates-page";
@@ -169,17 +170,41 @@ export default function App() {
                   </Routes>
                 </SignedIn>
 
-                <SignedOut>
-                  <Routes>
-                    <Route path="/" element={<LandingPage />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </SignedOut>
-              </>
-            }
-          />
-        </Routes>
-      </BrowserRouter>
-    </ThemeProvider>
+                  <Route path="/workflows" element={<WorkflowsPage />} />
+                  <Route
+                    path="/workflows/:id"
+                    element={<WorkflowDetailPage />}
+                  />
+
+                  <Route path="/admin" element={<AdminOverviewPage />} />
+                  <Route path="/admin/users" element={<AdminUsersPage />} />
+                  <Route
+                    path="/admin/approvals"
+                    element={<AdminApprovalsPage />}
+                  />
+                  <Route path="/admin/audit" element={<AdminAuditPage />} />
+                  <Route
+                    path="/admin/notifications"
+                    element={<AdminNotificationsPage />}
+                  />
+                  <Route path="/admin/reports" element={<ReportsPage />} />
+                  <Route path="/admin/workflows" element={<WorkflowsPage />} />
+                  <Route
+                    path="/admin/workflows/:id"
+                    element={<WorkflowDetailPage />}
+                  />
+
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </SignedIn>
+
+              <SignedOut>
+                <RedirectToSignIn />
+              </SignedOut>
+            </>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }

@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   CircleDollarSign,
   Download,
-  Edit3,
   Eye,
   FileText,
   Heading1,
@@ -21,6 +20,8 @@ import {
   Loader2,
   Plus,
   Save,
+  FileEdit,
+  Loader2,
   Send,
   ShieldCheck,
   Tag,
@@ -97,90 +98,69 @@ const STEP_LABELS: Record<number, string> = {
   9: "Renewal / Expiration",
 };
 
-// ─── Rich-text editor (TipTap / Google-Docs style) ───────────────────────────
+// ─── Document viewer / editor ─────────────────────────────────────────────────
 
-function ToolbarButton({
-  active, onClick, title, children,
-}: { active?: boolean; onClick: () => void; title: string; children: React.ReactNode }) {
-  return (
-    <button
-      onMouseDown={(e) => { e.preventDefault(); onClick(); }}
-      title={title}
-      className={`flex h-7 w-7 items-center justify-center rounded-lg transition-all ${
-        active
-          ? "bg-slate-900 text-white"
-          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
+type ViewMode = "preview" | "libreoffice";
 
-function RichTextEditor({
-  contractId,
-  contractTitle,
-  initialHtml,
-  onSaved,
-}: {
-  contractId: string;
-  contractTitle: string;
-  initialHtml: string;
-  onSaved?: () => void;
-}) {
-  const [saving,    setSaving]    = useState(false);
-  const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
-  const [saveMsg,   setSaveMsg]   = useState<string | null>(null);
-  const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      UnderlineExtension,
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
-      Placeholder.configure({ placeholder: "Start typing your contract here…" }),
-    ],
-    content: initialHtml || "<p></p>",
-    editorProps: {
-      attributes: {
-        class: "outline-none min-h-[65vh] px-10 py-8 prose prose-slate max-w-none text-slate-800 dark:text-slate-100",
-      },
-    },
-    onUpdate: () => {
-      // Auto-save after 2 s of inactivity
-      if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
-      autoSaveRef.current = setTimeout(() => handleSave(true), 2000);
-    },
-  });
+function DocumentPanel({ contractId }: { contractId: string }) {
+  const [mode, setMode]         = useState<ViewMode>("preview");
+  const [fileType, setFileType] = useState("");
+  const [hasFile, setHasFile]   = useState(false);
+  const [text, setText]         = useState("");
+  const [docxHtml, setDocxHtml] = useState("");
+  const [loading, setLoading]   = useState(true);
+  const [docxLoading, setDocxLoading] = useState(false);
+  const [wopiUrl, setWopiUrl]   = useState<string | null>(null);
+  const [wopiLoading, setWopiLoading] = useState(false);
+  const [wopiError, setWopiError] = useState<string | null>(null);
+  const viewUrl = `${API_BASE_URL}/api/documents/view/${contractId}`;
+  const isPdf  = fileType === ".pdf";
+  const isDocx = fileType === ".docx" || fileType === ".doc";
+  const isTxt  = fileType === ".txt" || fileType === ".rtf" || fileType === ".odt";
+  const canLibreOffice = isDocx || fileType === ".odt";
 
   useEffect(() => {
-    return () => { if (autoSaveRef.current) clearTimeout(autoSaveRef.current); };
-  }, []);
+    let cancelled = false;
+    setLoading(true);
+    api.getDocumentText(contractId)
+      .then((r) => { if (!cancelled) { setFileType(r.file_type || ""); setHasFile(r.has_file); setText(r.text || ""); }})
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [contractId]);
 
-  // When initialHtml changes (e.g. after parent re-fetches), update editor
-  useEffect(() => {
-    if (editor && initialHtml && editor.getHTML() !== initialHtml) {
-      editor.commands.setContent(initialHtml);
-    }
-  }, [initialHtml, editor]);
-
-  async function handleSave(silent = false) {
-    if (!editor) return;
-    if (!silent) setSaving(true);
-    setSaveMsg(null);
+  const loadDocxHtml = useCallback(async () => {
+    if (!isDocx || docxHtml || docxLoading) return;
+    setDocxLoading(true);
     try {
-      await api.saveDocumentHtml(contractId, editor.getHTML(), contractTitle);
-      if (!silent) {
-        setSaveMsg("✓ Saved");
-        setTimeout(() => setSaveMsg(null), 3000);
-        onSaved?.();
-      }
-    } catch {
-      if (!silent) setSaveMsg("✗ Save failed");
+      const resp = await fetch(viewUrl);
+      const buf  = await resp.arrayBuffer();
+      const mammoth = await import("mammoth");
+      const result  = await mammoth.convertToHtml({ arrayBuffer: buf });
+      setDocxHtml(result.value);
+    } catch { setDocxHtml("<p style='color:#888'>Could not render DOCX — download to view.</p>"); }
+    finally { setDocxLoading(false); }
+  }, [isDocx, docxHtml, docxLoading, viewUrl]);
+
+  useEffect(() => { if (isDocx && mode === "preview") loadDocxHtml(); }, [isDocx, mode, loadDocxHtml]);
+
+  const loadWopiUrl = useCallback(async () => {
+    if (wopiUrl || wopiLoading) return;
+    setWopiLoading(true);
+    setWopiError(null);
+    try {
+      const data = await api.getWopiUrl(contractId);
+      setWopiUrl(data.editor_url);
+    } catch (err) {
+      setWopiError(err instanceof Error ? err.message : "Could not load LibreOffice editor.");
     } finally {
-      if (!silent) setSaving(false);
+      setWopiLoading(false);
     }
-  }
+  }, [contractId, wopiUrl, wopiLoading]);
+
+  useEffect(() => {
+    if (mode === "libreoffice") loadWopiUrl();
+  }, [mode, loadWopiUrl]);
 
   async function handleExport(fmt: "docx" | "pdf") {
     // Save first so export uses latest content
@@ -341,33 +321,95 @@ function DocumentPanel({ contractId, contractTitle }: { contractId: string; cont
   );
 
   return (
-    <div className="space-y-3">
-      {/* Toggle to view original file */}
-      {(isPdf || isDocx) && (
-        <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5">
-          <p className="text-xs text-slate-500">
-            Original <span className="font-semibold uppercase">{fileType.replace(".", "")}</span> file uploaded
-          </p>
-          <button
-            onClick={() => setShowOrig((v) => !v)}
-            className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800"
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-5 py-3">
+        <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
+          <button onClick={() => setMode("preview")}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+              mode === "preview" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
+            }`}
           >
-            <Eye className="h-3.5 w-3.5" />
-            {showOrig ? "Hide original" : "View original file"}
+            <Eye className="h-3.5 w-3.5" /> Preview
           </button>
+          {canLibreOffice && (
+            <button onClick={() => setMode("libreoffice")}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                mode === "libreoffice" ? "bg-indigo-600 text-white" : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <FileEdit className="h-3.5 w-3.5" /> LibreOffice
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={handleDownload} className="rounded-xl">
+            <Download className="mr-1.5 h-3.5 w-3.5" /> Download
+          </Button>
+          <Badge className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-600">
+            {fileType || "file"}
+          </Badge>
         </div>
       )}
 
-      {/* Original file viewer (collapsible) */}
-      {showOrig && (isPdf || isDocx) && (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
-          {isPdf && (
-            <iframe src={viewUrl} title="Original document" className="w-full" style={{ height: "60vh", border: "none" }} />
+      {/* LibreOffice (Collabora Online) */}
+      {mode === "libreoffice" && (
+        <div style={{ height: "80vh" }}>
+          {wopiLoading && (
+            <div className="flex h-full items-center justify-center gap-3 text-slate-500">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="text-sm">Loading LibreOffice editor…</span>
+            </div>
           )}
-          {isDocx && (
-            <OriginalDocxViewer viewUrl={viewUrl} />
+          {wopiError && (
+            <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+              <p className="text-sm font-medium text-red-600">{wopiError}</p>
+              <button
+                onClick={() => { setWopiUrl(null); setWopiError(null); loadWopiUrl(); }}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          {wopiUrl && !wopiLoading && (
+            <iframe
+              src={wopiUrl}
+              title="LibreOffice Editor"
+              className="h-full w-full border-0"
+              allow="clipboard-read; clipboard-write"
+            />
           )}
         </div>
+      )}
+
+      {/* Content */}
+      {mode === "preview" && (
+        <>
+          {isPdf && <iframe src={viewUrl} title="Contract document" className="w-full" style={{ height: "72vh", border: "none" }} />}
+          {isDocx && (
+            <div className="prose prose-slate max-w-none overflow-auto px-10 py-8" style={{ minHeight: "60vh", maxHeight: "72vh" }}>
+              {docxLoading
+                ? <div className="flex items-center gap-2 py-10 text-slate-500"><Loader2 className="h-5 w-5 animate-spin" /> Rendering…</div>
+                : <div dangerouslySetInnerHTML={{ __html: docxHtml || "<p>No content.</p>" }} />
+              }
+            </div>
+          )}
+          {isTxt && (
+            <pre className="overflow-auto whitespace-pre-wrap break-words px-10 py-8 font-mono text-sm text-slate-800" style={{ minHeight: "50vh", maxHeight: "72vh" }}>
+              {text || <span className="italic text-slate-400">No text extracted.</span>}
+            </pre>
+          )}
+          {!isPdf && !isDocx && !isTxt && (
+            <div className="flex flex-col items-center gap-3 py-14 text-center">
+              <FileText className="h-10 w-10 text-slate-300" />
+              <p className="text-sm text-slate-500">Preview not supported for this file type.</p>
+              <Button variant="outline" className="rounded-xl" onClick={handleDownload}>
+                <Download className="mr-2 h-4 w-4" /> Download to view
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Rich text editor — always shown */}

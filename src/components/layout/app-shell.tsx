@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
+  BarChart2,
   Bell,
   CalendarDays,
   CheckCheck,
@@ -119,11 +120,13 @@ export function AppShell({
     { label: "Approvals", href: "/admin/approvals", icon: CheckCheck },
     { label: "Audit Logs", href: "/admin/audit", icon: ScrollText },
     { label: "Notifications & Alerts", href: "/admin/notifications", icon: Bell },
+    { label: "Reports", href: "/admin/reports", icon: BarChart2 },
   ];
 
   const managerNavigation = [
     { label: "Workflows", href: "/admin/workflows", icon: Workflow },
     { label: "Approvals", href: "/admin/approvals", icon: CheckCheck },
+    { label: "Reports", href: "/admin/reports", icon: BarChart2 },
   ];
 
   const showAdminSection = isAdminOrManager && adminMode;
