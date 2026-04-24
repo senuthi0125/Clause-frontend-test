@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { CheckCheck, Clock3, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppShell } from "@/components/layout/app-shell";
-import { AppBadge } from "@/components/ui/app-badge";
-import { AppCard } from "@/components/ui/app-card";
-import { AppEmptyState } from "@/components/ui/app-empty-state";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import type { Contract } from "@/types/api";
 
@@ -25,20 +24,18 @@ function formatLabel(value?: string | null) {
     .join(" ");
 }
 
-function badgeVariant(
-  value?: string | null
-): "emerald" | "rose" | "amber" {
+function badgeClass(value?: string | null) {
   switch ((value || "").toLowerCase()) {
     case "approved":
     case "accepted":
     case "completed":
-      return "emerald";
+      return "bg-green-100 text-green-700";
     case "rejected":
     case "declined":
-      return "rose";
+      return "bg-red-100 text-red-700";
     case "pending":
     default:
-      return "amber";
+      return "bg-amber-100 text-amber-700";
   }
 }
 
@@ -120,11 +117,7 @@ export default function AdminApprovalsPage() {
 
     approvals.forEach((item) => {
       const status = (item.status || "").toLowerCase();
-      if (
-        status === "approved" ||
-        status === "accepted" ||
-        status === "completed"
-      ) {
+      if (status === "approved" || status === "accepted" || status === "completed") {
         approved += 1;
       } else if (status === "rejected" || status === "declined") {
         rejected += 1;
@@ -148,115 +141,98 @@ export default function AdminApprovalsPage() {
       contractGroups={contractGroups}
     >
       {error ? (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-3xl border border-amber-100 bg-amber-50 shadow-sm dark:border-amber-500/20 dark:bg-amber-500/10">
-          <div className="p-5">
+        <Card className="border border-slate-200 bg-white shadow-sm">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Pending
-                </p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">
+                <p className="text-sm text-slate-500">Pending</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-950">
                   {loading ? "—" : stats.pending}
                 </p>
               </div>
-              <div className="rounded-2xl bg-white/70 p-3 text-amber-600 dark:bg-white/10 dark:text-amber-300">
+              <div className="rounded-2xl bg-amber-50 p-3 text-amber-600">
                 <Clock3 className="h-6 w-6" />
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="rounded-3xl border border-green-100 bg-green-50 shadow-sm dark:border-green-500/20 dark:bg-green-500/10">
-          <div className="p-5">
+        <Card className="border border-slate-200 bg-white shadow-sm">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Approved
-                </p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">
+                <p className="text-sm text-slate-500">Approved</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-950">
                   {loading ? "—" : stats.approved}
                 </p>
               </div>
-              <div className="rounded-2xl bg-white/70 p-3 text-green-600 dark:bg-white/10 dark:text-green-300">
+              <div className="rounded-2xl bg-green-50 p-3 text-green-600">
                 <ShieldCheck className="h-6 w-6" />
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="rounded-3xl border border-violet-100 bg-violet-50 shadow-sm dark:border-violet-500/20 dark:bg-violet-500/10">
-          <div className="p-5">
+        <Card className="border border-slate-200 bg-white shadow-sm">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Total Approvals
-                </p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">
+                <p className="text-sm text-slate-500">Total Approvals</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-950">
                   {loading ? "—" : stats.total}
                 </p>
               </div>
-              <div className="rounded-2xl bg-white/70 p-3 text-violet-600 dark:bg-white/10 dark:text-violet-300">
+              <div className="rounded-2xl bg-slate-100 p-3 text-slate-600">
                 <CheckCheck className="h-6 w-6" />
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <AppCard tone="soft" className="mt-6">
-        <div className="mb-5">
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-            Approval Records
-          </h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Approval status across contracts and approvers.
-          </p>
-        </div>
-
-        {loading ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Loading approvals...
-          </p>
-        ) : approvals.length === 0 ? (
-          <AppEmptyState title="No approvals found." />
-        ) : (
-          <div className="space-y-3">
-            {approvals.map((item) => (
-              <Link
-                key={item.id}
-                to={`/contracts/${item.contractId}`}
-                className="block rounded-2xl border border-violet-100 bg-white/70 p-4 transition hover:bg-violet-50/80 dark:border-violet-500/20 dark:bg-white/5 dark:hover:bg-violet-500/10"
-              >
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="font-medium text-slate-950 dark:text-white">
-                      {item.contractTitle}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                      Approver: {item.approver || "Unknown"}
-                    </p>
-                    {item.createdAt ? (
-                      <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                        Updated: {new Date(item.createdAt).toLocaleString()}
+      <Card className="mt-6 border border-slate-200 bg-white shadow-sm">
+        <CardHeader>
+          <CardTitle>Approval Records</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <p className="text-sm text-slate-500">Loading approvals...</p>
+          ) : approvals.length === 0 ? (
+            <p className="text-sm text-slate-500">No approvals found.</p>
+          ) : (
+            <div className="space-y-3">
+              {approvals.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/contracts/${item.contractId}`}
+                  className="block rounded-2xl border border-slate-200 p-4 transition hover:bg-slate-50"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="font-medium text-slate-950">
+                        {item.contractTitle}
                       </p>
-                    ) : null}
-                  </div>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Approver: {item.approver || "Unknown"}
+                      </p>
+                    </div>
 
-                  <AppBadge variant={badgeVariant(item.status)}>
-                    {formatLabel(item.status)}
-                  </AppBadge>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </AppCard>
+                    <Badge className={badgeClass(item.status)}>
+                      {formatLabel(item.status)}
+                    </Badge>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </AppShell>
   );
 }
