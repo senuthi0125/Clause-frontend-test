@@ -75,17 +75,17 @@ export default function ContractTemplatePage() {
       }
     >
       {error && (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
           {error}
         </div>
       )}
 
       {loading && (
-        <p className="text-sm text-slate-500">Loading templates...</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Loading templates...</p>
       )}
 
       {!loading && templates.length === 0 && (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           No templates found. Add templates in backend.
         </p>
       )}
@@ -94,38 +94,38 @@ export default function ContractTemplatePage() {
         {templates.map((template) => (
           <Card
             key={template.id}
-            className="border border-slate-200 bg-white shadow-sm"
+            className="border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5"
           >
             <CardHeader>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <CardTitle>{template.name}</CardTitle>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <CardTitle className="dark:text-white">{template.name}</CardTitle>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     {template.description || "No description provided"}
                   </p>
                 </div>
 
-                <Badge className="bg-slate-100 text-slate-700">
+                <Badge className="bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300">
                   v{template.version}
                 </Badge>
               </div>
             </CardHeader>
 
             <CardContent>
-              <div className="space-y-3 text-sm text-slate-600">
+              <div className="space-y-3 text-sm text-slate-600 dark:text-slate-400">
                 <div>
-                  <span className="font-medium text-slate-900">Type:</span>{" "}
+                  <span className="font-medium text-slate-900 dark:text-slate-200">Type:</span>{" "}
                   {formatLabel(template.contract_type)}
                 </div>
 
                 <div>
-                  <span className="font-medium text-slate-900">Fields:</span>{" "}
+                  <span className="font-medium text-slate-900 dark:text-slate-200">Fields:</span>{" "}
                   {template.fields?.length || 0}
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   {(template.tags || []).map((tag) => (
-                    <Badge key={tag} className="bg-blue-100 text-blue-700">
+                    <Badge key={tag} className="bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">
                       {tag}
                     </Badge>
                   ))}
