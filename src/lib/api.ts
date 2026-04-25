@@ -13,6 +13,7 @@ import type {
   ContractsResponse,
   DashboardStats,
   DraftResponse,
+  LifecycleStats,
   Template,
   TemplatesResponse,
   UserPreferences,
@@ -20,6 +21,7 @@ import type {
   UsersListResponse,
   ValueByType,
   Workflow,
+  WorkflowTemplate,
 } from "../types/api";
 
 const API_BASE_URL =
@@ -286,9 +288,19 @@ export const api = {
     ),
 
   saveDocumentText: (contractId: string, text: string) =>
-    request<{ message: string }>(`/api/documents/text/${contractId}`, {
+    request<{ message: string; version?: number; file_type?: string }>(
+      `/api/documents/text/${contractId}`,
+      { method: "PUT", body: JSON.stringify({ text }) }
+    ),
+
+  // Rich-text (TipTap HTML) editor endpoints
+  getDocumentHtml: (contractId: string) =>
+    request<{ html: string; title: string }>(`/api/documents/html/${contractId}`),
+
+  saveDocumentHtml: (contractId: string, html: string, title?: string) =>
+    request<{ message: string }>(`/api/documents/html/${contractId}`, {
       method: "PUT",
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ html, title: title ?? "Contract" }),
     }),
 
 
@@ -408,6 +420,47 @@ export const api = {
   disconnectCalendar: () =>
     request<{ message: string }>("/api/calendar/disconnect", { method: "DELETE" }),
 
+  // ── Document conversion (LibreOffice) ────────────────────────────────────
+  libreofficeStatus: () =>
+    request<{ available: boolean; supported_formats: string[]; message: string }>(
+      "/api/documents/libreoffice-status"
+    ),
+
+  /**
+   * Convert the latest document for a contract to a different format.
+   * Returns a Blob (the converted file) that the caller can turn into a
+   * download link.
+   */
+  convertDocument: async (contractId: string, targetFormat: string): Promise<Blob> => {
+    const token = await (async () => {
+      // Inline token resolution (same logic as resolveToken above)
+      if (tokenProvider) {
+        try { const t = await tokenProvider(); if (t) return t; } catch {}
+      }
+      if (typeof window !== "undefined") {
+        try { return window.localStorage.getItem("clause_auth_token"); } catch {}
+      }
+      return null;
+    })();
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/documents/convert/${contractId}?target_format=${encodeURIComponent(targetFormat)}`,
+      {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      }
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      let msg = `Conversion failed (${response.status})`;
+      try { msg = (JSON.parse(text) as { detail?: string }).detail ?? msg; } catch {}
+      throw new Error(msg);
+    }
+
+    return response.blob();
+  },
+
   getPreferences: () => request<UserPreferences>("/api/preferences/"),
 
   updatePreferences: (patch: Partial<UserPreferences>) =>
@@ -431,6 +484,52 @@ export const api = {
       `/api/notifications/send-expiry-alerts?dry_run=${dryRun}`,
       { method: "POST" }
     ),
+
+  // ── Lifecycle stats ───────────────────────────────────────────────────────
+  getLifecycleStats: () =>
+    request<LifecycleStats>("/api/contracts/lifecycle-stats"),
+
+  // ── Workflow templates ────────────────────────────────────────────────────
+  listWorkflowTemplates: () =>
+    request<WorkflowTemplate[]>("/api/workflows/templates"),
+
+  createWorkflowTemplate: (payload: {
+    name: string;
+    description?: string | null;
+    steps: Array<{
+      step_number: number;
+      name: string;
+      step_type: string;
+      description?: string | null;
+    }>;
+  }) =>
+    request<WorkflowTemplate>("/api/workflows/templates", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  updateWorkflowTemplate: (
+    id: string,
+    payload: Partial<{
+      name: string;
+      description: string | null;
+      steps: Array<{
+        step_number: number;
+        name: string;
+        step_type: string;
+        description?: string | null;
+      }>;
+    }>
+  ) =>
+    request<WorkflowTemplate>(`/api/workflows/templates/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+
+  deleteWorkflowTemplate: (id: string) =>
+    request<{ message: string }>(`/api/workflows/templates/${id}`, {
+      method: "DELETE",
+    }),
 
   listAuditLogs: (
     params: {

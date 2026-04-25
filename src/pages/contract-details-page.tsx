@@ -1,20 +1,31 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  Bold,
   Bot,
   CalendarDays,
+  Check,
   CheckCircle2,
   CircleDollarSign,
   Download,
   Edit3,
   Eye,
   FileText,
+  Heading1,
+  Heading2,
+  Heading3,
+  Italic,
+  Layers,
+  List,
+  ListOrdered,
   Loader2,
+  Plus,
   Save,
   Send,
   ShieldCheck,
   Tag,
   Trash2,
+  Underline,
   Workflow,
   X,
   XCircle,
@@ -26,12 +37,18 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
+import { useRole } from "@/hooks/use-role";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import UnderlineExtension from "@tiptap/extension-underline";
+import TextAlign from "@tiptap/extension-text-align";
+import Placeholder from "@tiptap/extension-placeholder";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { AppBadge } from "@/components/ui/app-badge";
 import { AppCard } from "@/components/ui/app-card";
 import { api, API_BASE_URL } from "@/lib/api";
-import type { Contract, Workflow as WorkflowType, Approval } from "@/types/api";
+import type { Contract, Workflow as WorkflowType, Approval, WorkflowTemplate } from "@/types/api";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -289,7 +306,7 @@ function DocumentPanel({ contractId }: { contractId: string }) {
             {fileType || "file"}
           </AppBadge>
         </div>
-      </div>
+      )}
 
       {mode === "preview" ? (
         <>
@@ -374,7 +391,38 @@ function DocumentPanel({ contractId }: { contractId: string }) {
           )}
         </div>
       )}
+
+      {/* Rich text editor — always shown */}
+      <RichTextEditor
+        contractId={contractId}
+        contractTitle={contractTitle}
+        initialHtml={initialHtml}
+      />
     </div>
+  );
+}
+
+function OriginalDocxViewer({ viewUrl }: { viewUrl: string }) {
+  const [html, setHtml]     = useState("");
+  const [loading, setLoad]  = useState(true);
+  useEffect(() => {
+    fetch(viewUrl)
+      .then((r) => r.arrayBuffer())
+      .then(async (buf) => {
+        const mammoth = await import("mammoth");
+        const result  = await mammoth.convertToHtml({ arrayBuffer: buf });
+        setHtml(result.value);
+      })
+      .catch(() => setHtml("<p style='color:#888'>Could not render — download to view.</p>"))
+      .finally(() => setLoad(false));
+  }, [viewUrl]);
+  if (loading) return <div className="flex items-center gap-2 p-8 text-slate-400"><Loader2 className="h-5 w-5 animate-spin" /> Rendering…</div>;
+  return (
+    <div
+      className="prose prose-slate max-w-none overflow-auto px-10 py-8"
+      style={{ maxHeight: "60vh" }}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
 }
 
@@ -507,6 +555,146 @@ function SendApprovalPanel({
   );
 }
 
+// ─── Workflow template picker modal ──────────────────────────────────────────
+
+const DEFAULT_STEP_DESCRIPTION =
+  "Request & Initiation → Authoring → AI Risk Analysis → Review & Negotiation → Approval → Execution & Signing → Storage → Monitoring → Renewal / Expiration";
+
+function WorkflowTemplatePicker({
+  onConfirm,
+  onClose,
+}: {
+  onConfirm: (template: WorkflowTemplate | null) => void;
+  onClose: () => void;
+}) {
+  const [templates, setTemplates] = useState<WorkflowTemplate[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [selected, setSelected]   = useState<string | "default">("default");
+
+  useEffect(() => {
+    api.listWorkflowTemplates()
+      .then((list) => setTemplates(list))
+      .catch(() => setTemplates([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const chosenTemplate = templates.find((t) => t.id === selected) ?? null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <div className="flex items-center gap-2">
+            <Layers className="h-5 w-5 text-indigo-500" />
+            <h2 className="font-semibold text-slate-900">Choose Workflow Template</h2>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Options */}
+        <div className="max-h-72 space-y-2 overflow-y-auto p-4">
+          {/* Default 9-step option */}
+          <button
+            onClick={() => setSelected("default")}
+            className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-all ${
+              selected === "default"
+                ? "border-indigo-500 bg-indigo-50"
+                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-100">
+              <Workflow className="h-4 w-4 text-indigo-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-slate-900">Default (9 steps)</p>
+              <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">{DEFAULT_STEP_DESCRIPTION}</p>
+            </div>
+            {selected === "default" && (
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
+            )}
+          </button>
+
+          {/* Custom templates */}
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-4 text-sm text-slate-400">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading templates…
+            </div>
+          ) : templates.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-400">
+              No custom templates yet.{" "}
+              <Link to="/admin/workflow-templates" className="text-indigo-500 underline hover:text-indigo-600">
+                Create one
+              </Link>
+            </div>
+          ) : (
+            templates.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setSelected(t.id)}
+                className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-all ${
+                  selected === t.id
+                    ? "border-indigo-500 bg-indigo-50"
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100">
+                  <Layers className="h-4 w-4 text-violet-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-slate-900">{t.name}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {t.steps.length} steps
+                    {t.description ? ` — ${t.description}` : ""}
+                  </p>
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {t.steps.slice(0, 5).map((s, i) => (
+                      <span key={i} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                        {s.name}
+                      </span>
+                    ))}
+                    {t.steps.length > 5 && (
+                      <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-400">
+                        +{t.steps.length - 5} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {selected === t.id && (
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
+                )}
+              </button>
+            ))
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4">
+          <p className="text-xs text-slate-400">
+            {selected === "default"
+              ? "9-step standard workflow will be used"
+              : `"${chosenTemplate?.name}" — ${chosenTemplate?.steps.length} steps`}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="rounded-xl" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="rounded-xl"
+              onClick={() => onConfirm(chosenTemplate)}
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> Start Workflow
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Workflow status card ─────────────────────────────────────────────────────
 
 function WorkflowCard({
@@ -518,8 +706,9 @@ function WorkflowCard({
   contractId: string;
   onWorkflowCreated: () => void;
 }) {
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [creating, setCreating]     = useState(false);
+  const [error, setError]           = useState<string | null>(null);
   const latest = workflows[0] ?? null;
 
   async function startWorkflow() {
@@ -595,7 +784,6 @@ function WorkflowCard({
                 {STEP_LABELS[latest.current_step] ??
                   `Step ${latest.current_step}`}
               </p>
-            </div>
 
             <div className="flex items-center gap-1">
               {Array.from({ length: latest.steps?.length ?? 9 }, (_, i) => {
