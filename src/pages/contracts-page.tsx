@@ -228,6 +228,7 @@ export default function ContractsPage() {
                 <AppInput
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && loadContracts()}
                   placeholder="Search by title"
                   className="h-11 pl-9"
                 />

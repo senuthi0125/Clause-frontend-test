@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Filter, RefreshCw } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
@@ -46,14 +46,27 @@ export default function AdminAuditPage() {
   const [actionFilter, setActionFilter] = useState("");
   const [userId, setUserId] = useState("");
 
-  const loadData = async (targetPage = page) => {
+  // Keep a ref to latest filter values so loadData always reads current state
+  const filtersRef = useRef({ resourceType, actionFilter, userId });
+  useEffect(() => {
+    filtersRef.current = { resourceType, actionFilter, userId };
+  }, [resourceType, actionFilter, userId]);
+
+  const loadData = useCallback(async (
+    targetPage = page,
+    filterOverrides?: { resourceType?: string; actionFilter?: string; userId?: string }
+  ) => {
+    const rt  = filterOverrides?.resourceType  ?? filtersRef.current.resourceType;
+    const af  = filterOverrides?.actionFilter  ?? filtersRef.current.actionFilter;
+    const uid = filterOverrides?.userId        ?? filtersRef.current.userId;
+
     setLoading(true);
     setError(null);
     try {
       const result = await api.listAuditLogs({
-        resource_type: resourceType || undefined,
-        action: actionFilter || undefined,
-        user_id: userId || undefined,
+        resource_type: rt || undefined,
+        action: af || undefined,
+        user_id: uid || undefined,
         page: targetPage,
         per_page: perPage,
       });
@@ -66,11 +79,20 @@ export default function AdminAuditPage() {
     } finally {
       setLoading(false);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, perPage]);
 
+  // Load on page change
   useEffect(() => {
     loadData(page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => loadData(page), 30_000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const applyFilters = () => {
@@ -85,8 +107,9 @@ export default function AdminAuditPage() {
     setResourceType("");
     setActionFilter("");
     setUserId("");
+    // Pass empty overrides directly — avoids stale closure issue
     if (page === 1) {
-      loadData(1);
+      loadData(1, { resourceType: "", actionFilter: "", userId: "" });
     } else {
       setPage(1);
     }
@@ -99,10 +122,19 @@ export default function AdminAuditPage() {
       title="Audit Logs"
       subtitle="Immutable record of system activity (admin/manager only)."
       actions={
-        <Button variant="outline" onClick={() => loadData(page)}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+            </span>
+            Live · refreshes every 30s
+          </span>
+          <Button variant="outline" onClick={() => loadData(page)}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
       }
     >
       {error ? (
@@ -125,6 +157,7 @@ export default function AdminAuditPage() {
             <AppInput
               value={resourceType}
               onChange={(e) => setResourceType(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && applyFilters()}
               placeholder="contract, user, workflow..."
             />
           </div>
@@ -136,6 +169,7 @@ export default function AdminAuditPage() {
             <AppInput
               value={actionFilter}
               onChange={(e) => setActionFilter(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && applyFilters()}
               placeholder="create, update, delete..."
             />
           </div>
@@ -147,6 +181,7 @@ export default function AdminAuditPage() {
             <AppInput
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && applyFilters()}
               placeholder="clerk_id"
             />
           </div>

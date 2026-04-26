@@ -65,7 +65,7 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
         <div className="relative z-10 space-y-8">
           <div>
             <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Contract Management Platform
+              Contract LifeCycle Management Platform
             </p>
             <h1 className="text-[2.4rem] font-bold leading-[1.15] tracking-tight text-white">
               Every contract,
