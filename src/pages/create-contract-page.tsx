@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { Plus, Trash2, FileText, CheckCircle2 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { AppCard } from "@/components/ui/app-card";
+import { AppInput } from "@/components/ui/app-input";
+import { AppBadge } from "@/components/ui/app-badge";
 import { api } from "@/lib/api";
+import { formatLabel } from "@/lib/utils";
 import type { ContractParty, Template } from "@/types/api";
 
 type FormState = {
@@ -40,14 +43,6 @@ function blankParty(): ContractParty {
     email: "",
     organization: "",
   };
-}
-
-function formatLabel(value: string) {
-  return value
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
-    .join(" ");
 }
 
 export default function CreateContractPage() {
@@ -170,253 +165,309 @@ export default function CreateContractPage() {
   return (
     <AppShell
       title="Create Contract"
-      subtitle="Create a contract and send it to the backend."
+      subtitle="Create a contract and automatically start its workflow."
       contractGroups={contractGroups}
     >
       {error && (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
           {error}
         </div>
       )}
 
       {message && (
-        <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+        <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-300">
           {message}
         </div>
       )}
 
       <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-        <Card className="border border-slate-200 bg-white shadow-sm">
-          <CardHeader>
-            <CardTitle>Contract Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="space-y-2 text-sm">
-                <span>Title</span>
-                <Input
-                  value={form.title}
-                  onChange={(e) =>
-                    setForm({ ...form, title: e.target.value })
-                  }
-                />
-              </label>
+        <AppCard tone="soft">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+              Contract Details
+            </h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              Add the main information required to create the contract record.
+            </p>
+          </div>
 
-              <label className="space-y-2 text-sm">
-                <span>Type</span>
-                <select
-                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
-                  value={form.contract_type}
-                  onChange={(e) =>
-                    setForm({ ...form, contract_type: e.target.value })
-                  }
-                >
-                  <option value="service_agreement">Service Agreement</option>
-                  <option value="nda">NDA</option>
-                  <option value="employment">Employment</option>
-                  <option value="vendor">Vendor</option>
-                  <option value="licensing">Licensing</option>
-                  <option value="partnership">Partnership</option>
-                  <option value="other">Other</option>
-                </select>
-              </label>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className={inputLabel}>
+              <span>Title</span>
+              <AppInput
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="Enter contract title"
+                className="h-11"
+              />
+            </label>
 
-              <label className="space-y-2 text-sm md:col-span-2">
-                <span>Description</span>
-                <textarea
-                  className="min-h-28 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none"
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                />
-              </label>
-
-              <label className="space-y-2 text-sm">
-                <span>Start Date</span>
-                <Input
-                  type="date"
-                  value={form.start_date}
-                  onChange={(e) =>
-                    setForm({ ...form, start_date: e.target.value })
-                  }
-                />
-              </label>
-
-              <label className="space-y-2 text-sm">
-                <span>End Date</span>
-                <Input
-                  type="date"
-                  value={form.end_date}
-                  onChange={(e) =>
-                    setForm({ ...form, end_date: e.target.value })
-                  }
-                />
-              </label>
-
-              <label className="space-y-2 text-sm">
-                <span>Contract Value</span>
-                <Input
-                  type="number"
-                  value={form.value}
-                  onChange={(e) =>
-                    setForm({ ...form, value: e.target.value })
-                  }
-                />
-              </label>
-
-              <label className="space-y-2 text-sm">
-                <span>Approval Type</span>
-                <select
-                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
-                  value={form.approval_type}
-                  onChange={(e) =>
-                    setForm({ ...form, approval_type: e.target.value })
-                  }
-                >
-                  <option value="all_required">All Required</option>
-                  <option value="majority">Majority</option>
-                  <option value="first_person">First Person</option>
-                </select>
-              </label>
-
-              <label className="space-y-2 text-sm md:col-span-2">
-                <span>Payment Terms</span>
-                <Input
-                  value={form.payment_terms}
-                  onChange={(e) =>
-                    setForm({ ...form, payment_terms: e.target.value })
-                  }
-                />
-              </label>
-
-              <label className="space-y-2 text-sm">
-                <span>Workflow Trigger</span>
-                <select
-                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
-                  value={form.workflow_trigger}
-                  onChange={(e) =>
-                    setForm({ ...form, workflow_trigger: e.target.value })
-                  }
-                >
-                  <option value="creation">On Creation</option>
-                  <option value="modification">On Modification</option>
-                  <option value="renewal">On Renewal</option>
-                </select>
-              </label>
-
-              <label className="space-y-2 text-sm">
-                <span>Tags</span>
-                <Input
-                  value={form.tags}
-                  onChange={(e) =>
-                    setForm({ ...form, tags: e.target.value })
-                  }
-                  placeholder="security, vendor, renewal"
-                />
-              </label>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-5">
-          <Card className="border border-slate-200 bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle>Parties</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {parties.map((party, index) => (
-                  <div
-                    key={index}
-                    className="rounded-xl border border-slate-200 p-4"
-                  >
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <Input
-                        placeholder="Name"
-                        value={party.name}
-                        onChange={(e) =>
-                          updateParty(index, "name", e.target.value)
-                        }
-                      />
-                      <Input
-                        placeholder="Role"
-                        value={party.role}
-                        onChange={(e) =>
-                          updateParty(index, "role", e.target.value)
-                        }
-                      />
-                      <Input
-                        placeholder="Email"
-                        value={party.email || ""}
-                        onChange={(e) =>
-                          updateParty(index, "email", e.target.value)
-                        }
-                      />
-                      <Input
-                        placeholder="Organization"
-                        value={party.organization || ""}
-                        onChange={(e) =>
-                          updateParty(index, "organization", e.target.value)
-                        }
-                      />
-                    </div>
-
-                    <div className="mt-3 flex justify-end">
-                      <Button
-                        variant="outline"
-                        onClick={() => removeParty(index)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-
-                <Button variant="outline" onClick={addParty}>
-                  Add Party
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-slate-200 bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle>
-                {loadingTemplate
-                  ? "Loading template..."
-                  : template
-                  ? "Template Linked"
-                  : "No Template Selected"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {template ? (
-                <div className="space-y-2 text-sm text-slate-600">
-                  <p className="font-medium text-slate-900">{template.name}</p>
-                  <p>{template.description || "No description provided."}</p>
-                  <p>Fields available: {template.fields?.length || 0}</p>
-                </div>
-              ) : (
-                <p className="text-sm text-slate-500">
-                  You can create a contract from scratch or use a template.
-                </p>
-              )}
-
-              <Button
-                className="mt-4 w-full"
-                onClick={submit}
-                disabled={
-                  saving ||
-                  !form.title ||
-                  !form.start_date ||
-                  !form.end_date
+            <label className={inputLabel}>
+              <span>Type</span>
+              <select
+                className={selectClass}
+                value={form.contract_type}
+                onChange={(e) =>
+                  setForm({ ...form, contract_type: e.target.value })
                 }
               >
-                {saving ? "Saving..." : "Create Contract and Workflow"}
+                <option value="service_agreement">Service Agreement</option>
+                <option value="nda">NDA</option>
+                <option value="employment">Employment</option>
+                <option value="vendor">Vendor</option>
+                <option value="licensing">Licensing</option>
+                <option value="partnership">Partnership</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+
+            <label className={`${inputLabel} md:col-span-2`}>
+              <span>Description</span>
+              <textarea
+                className={textareaClass}
+                value={form.description}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
+                placeholder="Briefly describe the purpose of this contract"
+              />
+            </label>
+
+            <label className={inputLabel}>
+              <span>Start Date</span>
+              <AppInput
+                type="date"
+                value={form.start_date}
+                onChange={(e) =>
+                  setForm({ ...form, start_date: e.target.value })
+                }
+                className="h-11"
+              />
+            </label>
+
+            <label className={inputLabel}>
+              <span>End Date</span>
+              <AppInput
+                type="date"
+                value={form.end_date}
+                onChange={(e) =>
+                  setForm({ ...form, end_date: e.target.value })
+                }
+                className="h-11"
+              />
+            </label>
+
+            <label className={inputLabel}>
+              <span>Contract Value</span>
+              <AppInput
+                type="number"
+                value={form.value}
+                onChange={(e) => setForm({ ...form, value: e.target.value })}
+                placeholder="0"
+                className="h-11"
+              />
+            </label>
+
+            <label className={inputLabel}>
+              <span>Approval Type</span>
+              <select
+                className={selectClass}
+                value={form.approval_type}
+                onChange={(e) =>
+                  setForm({ ...form, approval_type: e.target.value })
+                }
+              >
+                <option value="all_required">All Required</option>
+                <option value="majority">Majority</option>
+                <option value="first_person">First Person</option>
+              </select>
+            </label>
+
+            <label className={`${inputLabel} md:col-span-2`}>
+              <span>Payment Terms</span>
+              <AppInput
+                value={form.payment_terms}
+                onChange={(e) =>
+                  setForm({ ...form, payment_terms: e.target.value })
+                }
+                placeholder="Example: Net 30, monthly payment, milestone based"
+                className="h-11"
+              />
+            </label>
+
+            <label className={inputLabel}>
+              <span>Workflow Trigger</span>
+              <select
+                className={selectClass}
+                value={form.workflow_trigger}
+                onChange={(e) =>
+                  setForm({ ...form, workflow_trigger: e.target.value })
+                }
+              >
+                <option value="creation">On Creation</option>
+                <option value="modification">On Modification</option>
+                <option value="renewal">On Renewal</option>
+              </select>
+            </label>
+
+            <label className={inputLabel}>
+              <span>Tags</span>
+              <AppInput
+                value={form.tags}
+                onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                placeholder="security, vendor, renewal"
+                className="h-11"
+              />
+            </label>
+          </div>
+        </AppCard>
+
+        <div className="space-y-5">
+          <AppCard tone="soft">
+            <div className="mb-6 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                  Parties
+                </h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  Add the parties involved in this contract.
+                </p>
+              </div>
+
+              <AppBadge variant="violet">{parties.length}</AppBadge>
+            </div>
+
+            <div className="space-y-4">
+              {parties.map((party, index) => (
+                <div
+                  key={index}
+                  className="rounded-2xl border border-violet-100 bg-white/70 p-4 dark:border-violet-500/20 dark:bg-white/5"
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="text-sm font-semibold text-slate-800 dark:text-white">
+                      Party {index + 1}
+                    </p>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeParty(index)}
+                      disabled={parties.length === 1}
+                      className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 dark:border-red-500/20 dark:text-red-300 dark:hover:bg-red-500/10"
+                    >
+                      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                      Remove
+                    </Button>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <AppInput
+                      placeholder="Name"
+                      value={party.name}
+                      onChange={(e) =>
+                        updateParty(index, "name", e.target.value)
+                      }
+                      className="h-11"
+                    />
+                    <AppInput
+                      placeholder="Role"
+                      value={party.role}
+                      onChange={(e) =>
+                        updateParty(index, "role", e.target.value)
+                      }
+                      className="h-11"
+                    />
+                    <AppInput
+                      placeholder="Email"
+                      value={party.email || ""}
+                      onChange={(e) =>
+                        updateParty(index, "email", e.target.value)
+                      }
+                      className="h-11"
+                    />
+                    <AppInput
+                      placeholder="Organization"
+                      value={party.organization || ""}
+                      onChange={(e) =>
+                        updateParty(index, "organization", e.target.value)
+                      }
+                      className="h-11"
+                    />
+                  </div>
+                </div>
+              ))}
+
+              <Button
+                variant="outline"
+                onClick={addParty}
+                className="w-full rounded-xl border-slate-200 bg-white dark:border-white/10 dark:bg-white/5"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Party
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </AppCard>
+
+          <AppCard tone="soft">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">
+                <FileText className="h-5 w-5" />
+              </div>
+
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                  {loadingTemplate
+                    ? "Loading Template..."
+                    : template
+                    ? "Template Linked"
+                    : "No Template Selected"}
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {template
+                    ? "This contract will be created using the selected template."
+                    : "Create from scratch or use a template later."}
+                </p>
+              </div>
+            </div>
+
+            {template ? (
+              <div className="space-y-3 rounded-2xl border border-violet-100 bg-white/70 p-4 text-sm text-slate-600 dark:border-violet-500/20 dark:bg-white/5 dark:text-slate-300">
+                <p className="font-semibold text-slate-900 dark:text-white">
+                  {template.name}
+                </p>
+                <p>{template.description || "No description provided."}</p>
+                <div className="flex items-center justify-between rounded-xl bg-violet-50 px-3 py-2 dark:bg-violet-500/10">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Fields available
+                  </span>
+                  <AppBadge variant="violet">
+                    {template.fields?.length || 0}
+                  </AppBadge>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-violet-100 bg-white/60 px-4 py-6 text-center dark:border-violet-500/20 dark:bg-white/5">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  You can create a contract from scratch or use a template.
+                </p>
+              </div>
+            )}
+
+            <Button
+              className="mt-5 h-11 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-sm hover:opacity-90"
+              onClick={submit}
+              disabled={saving || !form.title || !form.start_date || !form.end_date}
+            >
+              {saving ? (
+                "Saving..."
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Create Contract and Workflow
+                </>
+              )}
+            </Button>
+          </AppCard>
         </div>
       </div>
     </AppShell>

@@ -29,7 +29,7 @@ import type {
 
 const API_BASE_URL =
   (import.meta as ImportMeta & { env?: Record<string, string> }).env
-    ?.VITE_API_BASE_URL || "http://localhost:8000";
+    ?.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 class ApiError extends Error {
   status: number;
@@ -78,8 +78,8 @@ async function resolveToken(): Promise<string | null> {
     try {
       const token = await tokenProvider();
       if (token) return token;
-    } catch (err) {
-      console.warn("Auth token provider failed:", err);
+    } catch {
+      // Fall through to stored token
     }
   }
 
@@ -311,42 +311,7 @@ export const api = {
       body: JSON.stringify({ html, title: title ?? "Contract" }),
     }),
 
-  exportDocument: async (contractId: string, format: "docx" | "pdf", filename: string): Promise<void> => {
-    const token = await (async () => {
-      if (tokenProvider) {
-        try { const t = await tokenProvider(); if (t) return t; } catch {}
-      }
-      if (typeof window !== "undefined") {
-        try { return window.localStorage.getItem("clause_auth_token"); } catch {}
-      }
-      return null;
-    })();
 
-    const response = await fetch(
-      `${API_BASE_URL}/api/documents/export/${contractId}?format=${format}`,
-      {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      }
-    );
-
-    if (!response.ok) {
-      const text = await response.text();
-      let msg = `Export failed (${response.status})`;
-      try { msg = (JSON.parse(text) as { detail?: string }).detail ?? msg; } catch {}
-      throw new Error(msg);
-    }
-
-    const blob = await response.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  },
 
   scanContractConflicts: (contractId: string) =>
     request<ConflictResult>(`/api/ai/conflicts/scan/${contractId}`, {
@@ -400,6 +365,16 @@ export const api = {
     return request<AiChatResponse>("/api/ai/chat", {
       method: "POST",
       body: JSON.stringify(payload),
+    });
+  },
+
+  chatWithFile: (question: string, file: File) => {
+    const form = new FormData();
+    form.append("question", question);
+    form.append("file", file);
+    return request<AiChatResponse>("/api/ai/chat-file", {
+      method: "POST",
+      body: form,
     });
   },
 
