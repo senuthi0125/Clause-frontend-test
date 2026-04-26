@@ -5,6 +5,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { formatLabel } from "@/lib/utils";
 import type { Contract } from "@/types/api";
 
 type ApprovalItem = {
@@ -15,14 +16,6 @@ type ApprovalItem = {
   status?: string;
   createdAt?: string;
 };
-
-function formatLabel(value?: string | null) {
-  return (value || "pending")
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
-    .join(" ");
-}
 
 function badgeClass(value?: string | null) {
   switch ((value || "").toLowerCase()) {

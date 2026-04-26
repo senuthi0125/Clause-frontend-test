@@ -12,36 +12,8 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { formatLabel, formatDate, formatCurrency } from "@/lib/utils";
 import type { Contract } from "@/types/api";
-
-function formatLabel(value?: string | null) {
-  return (value || "-")
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
-    .join(" ");
-}
-
-function formatCurrency(value?: number | null) {
-  if (value == null || Number.isNaN(value)) return "—";
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 function getNumber(value: unknown, fallback = 0) {
   return typeof value === "number" && !Number.isNaN(value) ? value : fallback;

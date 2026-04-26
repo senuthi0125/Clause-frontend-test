@@ -372,6 +372,8 @@ export type LifecycleStats = {
   waiting_to_active: number;
   became_active: number;
   upcoming_renewals: number;
+};
+
 // ─── Reports ─────────────────────────────────────────────
 
 export type ReportDimension =

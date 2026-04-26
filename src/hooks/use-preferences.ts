@@ -76,7 +76,7 @@ export function usePreferences() {
         };
         saveToLS(next);
         debounce(() => {
-          api.updatePreferences({ widget_visibility: next.widget_visibility }).catch(console.warn);
+          api.updatePreferences({ widget_visibility: next.widget_visibility }).catch(() => {});
         }, 500);
         return next;
       });
@@ -90,7 +90,7 @@ export function usePreferences() {
         const next: UserPreferences = { ...prev, default_contract_filter: filter };
         saveToLS(next);
         debounce(() => {
-          api.updatePreferences({ default_contract_filter: filter }).catch(console.warn);
+          api.updatePreferences({ default_contract_filter: filter }).catch(() => {});
         }, 300);
         return next;
       });
@@ -102,7 +102,7 @@ export function usePreferences() {
     setPrefs((prev) => {
       const next: UserPreferences = { ...prev, accent_color: color };
       saveToLS(next);
-      api.updatePreferences({ accent_color: color }).catch(console.warn);
+      api.updatePreferences({ accent_color: color }).catch(() => {});
       return next;
     });
   }, []);
@@ -116,7 +116,7 @@ export function usePreferences() {
         pinned_contracts: [...prev.pinned_contracts, contract],
       };
       saveToLS(next);
-      api.updatePreferences({ pinned_contracts: next.pinned_contracts }).catch(console.warn);
+      api.updatePreferences({ pinned_contracts: next.pinned_contracts }).catch(() => {});
       return next;
     });
   }, []);
@@ -128,7 +128,7 @@ export function usePreferences() {
         pinned_contracts: prev.pinned_contracts.filter((p) => p.id !== contractId),
       };
       saveToLS(next);
-      api.updatePreferences({ pinned_contracts: next.pinned_contracts }).catch(console.warn);
+      api.updatePreferences({ pinned_contracts: next.pinned_contracts }).catch(() => {});
       return next;
     });
   }, []);

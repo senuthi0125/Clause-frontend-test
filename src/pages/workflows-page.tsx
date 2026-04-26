@@ -5,35 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { formatLabel, statusBadgeClass as badgeClass } from "@/lib/utils";
 import type { Contract, Workflow } from "@/types/api";
 
 type WorkflowItem = {
   workflow: Workflow;
   contract?: Contract | null;
 };
-
-function formatLabel(value?: string | null) {
-  return (value || "")
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
-    .join(" ");
-}
-
-function badgeClass(value?: string | null) {
-  switch ((value || "").toLowerCase()) {
-    case "completed":
-      return "bg-green-100 text-green-700";
-    case "active":
-    case "in_progress":
-      return "bg-slate-100 text-slate-700";
-    case "cancelled":
-    case "rejected":
-      return "bg-red-100 text-red-700";
-    default:
-      return "bg-slate-100 text-slate-700";
-  }
-}
 
 export default function WorkflowsPage() {
   const location = useLocation();

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Plus, Search, Trash2, Upload } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Loader2, Plus, Search, Trash2, Upload, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/use-role";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api, buildContractsQuery } from "@/lib/api";
+import { formatLabel, formatDate, formatCurrency, statusBadgeClass as badgeClass } from "@/lib/utils";
 import type { Contract, ContractsResponse } from "@/types/api";
 
 // Ordered pipeline stages — used to build the progress tracker
@@ -62,61 +63,6 @@ function WorkflowProgressBar({ stage }: { stage?: string | null }) {
   );
 }
 
-function formatLabel(value?: string | null) {
-  return (value || "-")
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
-    .join(" ");
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return "—";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function formatCurrency(value?: number | null) {
-  if (value == null) return "—";
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function badgeClass(value?: string | null) {
-  switch ((value || "").toLowerCase()) {
-    case "high":
-      return "bg-red-100 text-red-700";
-    case "medium":
-      return "bg-amber-100 text-amber-700";
-    case "low":
-      return "bg-green-100 text-green-700";
-    case "active":
-      return "bg-green-100 text-green-700";
-    case "draft":
-      return "bg-slate-100 text-slate-700";
-    case "review":
-    case "approval":
-    case "authoring":
-    case "execution":
-    case "monitoring":
-    case "request":
-    case "storage":
-      return "bg-violet-100 text-violet-700";
-    default:
-      return "bg-slate-100 text-slate-700";
-  }
-}
-
 function getRiskBadgeLabel(contract: Contract) {
   const riskScore = (contract as Contract & { risk_score?: number | null })
     .risk_score;
@@ -150,6 +96,29 @@ export default function ContractsPage() {
   const [meta, setMeta] = useState<ContractsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handleUploadFile(file: File) {
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const result = await api.uploadContract(file);
+      if (!result?.contract?.id && !result?.id) throw new Error("Upload failed — no contract ID returned.");
+      setUploadOpen(false);
+      await loadContracts();
+      const id = result.contract?.id ?? result.id;
+      if (id) navigate(`/contracts/${id}`);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const loadContracts = async () => {
     setLoading(true);
@@ -244,12 +213,9 @@ export default function ContractsPage() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-3 border-t border-slate-100 pt-1">
-              {/* Upload goes through the full pipeline: upload → AI analysis → conflict check */}
-              <Button variant="outline" asChild className="h-11 rounded-xl">
-                <Link to="/upload">
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload contract
-                </Link>
+              <Button variant="outline" className="h-11 rounded-xl" onClick={() => { setUploadError(null); setUploadOpen(true); }}>
+                <Upload className="mr-2 h-4 w-4" />
+                Upload contract
               </Button>
 
               <Button asChild className="h-11 rounded-xl">
@@ -392,6 +358,51 @@ export default function ContractsPage() {
           Showing {contracts.length} of {meta.total} contracts.
         </p>
       ) : null}
+
+      {uploadOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !uploading && setUploadOpen(false)}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-800">Upload contract</h2>
+              <button onClick={() => !uploading && setUploadOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <input ref={fileRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.txt"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadFile(f); e.target.value = ""; }} />
+
+            {uploadError && (
+              <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">{uploadError}</div>
+            )}
+
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files?.[0]; if (f) handleUploadFile(f); }}
+              onClick={() => !uploading && fileRef.current?.click()}
+              className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-12 transition-all ${dragging ? "border-violet-500 bg-violet-50" : "border-slate-300 bg-white hover:border-slate-400 hover:bg-slate-50"}`}
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="h-10 w-10 animate-spin text-violet-500" />
+                  <p className="text-sm font-medium text-slate-600">Uploading…</p>
+                </>
+              ) : (
+                <>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-violet-50">
+                    <Upload className="h-7 w-7 text-violet-500" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-slate-700">Drop a file or click to browse</p>
+                    <p className="mt-1 text-xs text-slate-400">PDF, DOC, DOCX, TXT</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

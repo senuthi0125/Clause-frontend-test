@@ -19,20 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { formatLabel as fmt, statusBadgeClass as badgeClass } from "@/lib/utils";
 import type { Contract } from "@/types/api";
-
-function fmt(value?: string | null) {
-  return (value || "unknown").replace(/_/g, " ").split(" ")
-    .map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p)).join(" ");
-}
-function badgeClass(value?: string | null) {
-  switch ((value || "").toLowerCase()) {
-    case "high":   return "bg-red-100 text-red-700";
-    case "medium": return "bg-amber-100 text-amber-700";
-    case "low":    return "bg-green-100 text-green-700";
-    default:       return "bg-slate-100 text-slate-700";
-  }
-}
 
 // ── Email settings panel ───────────────────────────────────────────────────
 

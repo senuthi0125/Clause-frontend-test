@@ -6,22 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
+import { formatDateTime } from "@/lib/utils";
 import type { AuditLogResponse } from "@/types/api";
-
-function formatDateTime(value?: string | null) {
-  if (!value) return "—";
-  try {
-    return new Date(value).toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return value;
-  }
-}
 
 function actionBadgeClass(action: string) {
   const a = action?.toLowerCase() ?? "";

@@ -14,7 +14,6 @@ import ContractTemplatePage from "./pages/contract-template-page";
 import CreateContractPage from "./pages/create-contract-page";
 import ContractDetailsPage from "./pages/contract-details-page";
 import ConflictDetectionPage from "./pages/conflict-detection-page";
-import AIAnalysisPage from "./pages/ai-analysis-page";
 import RiskAnalysisPage from "./pages/risk-analysis-page";
 import AdminOverviewPage from "./pages/admin-overview-page";
 import AdminUsersPage from "./pages/admin-users-page";
@@ -25,7 +24,6 @@ import ReportsPage from "./pages/reports-page";
 import WorkflowsPage from "./pages/workflows-page";
 import WorkflowDetailPage from "./pages/workflow-detail-page";
 import WorkflowTemplatesPage from "./pages/workflow-templates-page";
-import UploadPipelinePage from "./pages/upload-pipeline-page";
 import SettingsPage from "./pages/settings-page";
 import { AuthBridge } from "./components/auth-bridge";
 import { ThemeProvider } from "./components/theme-provider";
@@ -143,11 +141,9 @@ export default function App() {
                   <Routes>
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/contracts" element={<ContractsPage />} />
-                    <Route path="/upload" element={<UploadPipelinePage />} />
                     <Route path="/contracts/new" element={<ContractTemplatePage />} />
                     <Route path="/contracts/create" element={<CreateContractPage />} />
                     <Route path="/contracts/:id" element={<ContractDetailsPage />} />
-                    <Route path="/ai-analysis" element={<AIAnalysisPage />} />
                     <Route path="/conflict-detection" element={<ConflictDetectionPage />} />
                     <Route path="/calendar" element={<CalendarPage />} />
                     <Route path="/risk-analysis" element={<RiskAnalysisPage />} />

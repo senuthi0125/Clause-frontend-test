@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { formatDate as fmtDate } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -48,11 +49,6 @@ function getDaysUntil(dateStr: string): number {
   return Math.ceil((then.getTime() - now.getTime()) / 86_400_000);
 }
 
-function fmtDate(dateStr: string) {
-  return new Date(dateStr + "T00:00:00").toLocaleDateString(undefined, {
-    month: "short", day: "numeric", year: "numeric",
-  });
-}
 
 function kindColor(kind: "start" | "expiry") {
   return kind === "start" ? "bg-green-500" : "bg-red-500";

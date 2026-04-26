@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { formatLabel, formatDate } from "@/lib/utils";
 import type { Contract, UserRole } from "@/types/api";
 
 type UserRow = {
@@ -18,26 +19,6 @@ type UserRow = {
   company?: string;
   created_at?: string;
 };
-
-function formatLabel(value?: string | null) {
-  return (value || "-")
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
-    .join(" ");
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 function roleBadgeClass(role?: string | null) {
   switch ((role || "").toLowerCase()) {

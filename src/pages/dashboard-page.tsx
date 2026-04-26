@@ -28,6 +28,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { formatLabel as formatTypeLabel, formatDate, statusBadgeClass as statusBadgeClass } from "@/lib/utils";
 import { usePreferences } from "@/hooks/use-preferences";
 import { useTheme } from "@/components/theme-provider";
 import type { DashboardStats } from "@/types/api";
@@ -113,24 +114,6 @@ type ActivityItem = {
   updated_at: string;
 };
 
-function formatTypeLabel(value: string) {
-  return value
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p))
-    .join(" ");
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Invalid date";
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 function getDaysLabel(days: number) {
   if (days < 0) return "Overdue";
   if (days === 0) return "Due today";
@@ -147,21 +130,6 @@ function getPercent(value: number, total: number) {
 function getMinBarWidth(value: number, total: number) {
   if (!total || value <= 0) return 0;
   return Math.max((value / total) * 100, 8);
-}
-
-function statusBadgeClass(status?: string) {
-  switch ((status || "").toLowerCase()) {
-    case "active":
-      return "bg-emerald-100 text-emerald-700";
-    case "draft":
-      return "bg-slate-100 text-slate-700";
-    case "expired":
-      return "bg-red-100 text-red-700";
-    case "renewed":
-      return "bg-blue-100 text-blue-700";
-    default:
-      return "bg-slate-100 text-slate-700";
-  }
 }
 
 function buildTrendData(activity: ActivityItem[]) {

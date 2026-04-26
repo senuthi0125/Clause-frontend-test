@@ -29,7 +29,7 @@ import type {
 
 const API_BASE_URL =
   (import.meta as ImportMeta & { env?: Record<string, string> }).env
-    ?.VITE_API_BASE_URL || "http://localhost:8000";
+    ?.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 class ApiError extends Error {
   status: number;
@@ -78,8 +78,8 @@ async function resolveToken(): Promise<string | null> {
     try {
       const token = await tokenProvider();
       if (token) return token;
-    } catch (err) {
-      console.warn("Auth token provider failed:", err);
+    } catch {
+      // Fall through to stored token
     }
   }
 
@@ -400,6 +400,16 @@ export const api = {
     return request<AiChatResponse>("/api/ai/chat", {
       method: "POST",
       body: JSON.stringify(payload),
+    });
+  },
+
+  chatWithFile: (question: string, file: File) => {
+    const form = new FormData();
+    form.append("question", question);
+    form.append("file", file);
+    return request<AiChatResponse>("/api/ai/chat-file", {
+      method: "POST",
+      body: form,
     });
   },
 

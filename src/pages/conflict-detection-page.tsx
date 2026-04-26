@@ -17,17 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { formatLabel as fmt } from "@/lib/utils";
 import type { ConflictResult, Contract } from "@/types/api";
-
-// ─── helpers ────────────────────────────────────────────────────────────────
-
-function fmt(value?: string | null) {
-  return (value || "—")
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p))
-    .join(" ");
-}
 
 function severityColors(v?: string | null) {
   switch ((v || "").toLowerCase()) {

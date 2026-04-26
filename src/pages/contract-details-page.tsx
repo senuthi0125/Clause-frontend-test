@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
-  Bold,
   Bot,
   CalendarDays,
   Check,
@@ -9,24 +8,15 @@ import {
   CircleDollarSign,
   Download,
   Eye,
+  FileEdit,
   FileText,
-  Heading1,
-  Heading2,
-  Heading3,
-  Italic,
   Layers,
-  List,
-  ListOrdered,
   Loader2,
   Plus,
-  Save,
-  FileEdit,
-  Loader2,
   Send,
   ShieldCheck,
   Tag,
   Trash2,
-  Underline,
   Workflow,
   X,
   XCircle,
@@ -35,55 +25,18 @@ import {
   RotateCcw,
   Clock,
   ChevronRight,
+  User,
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/use-role";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import UnderlineExtension from "@tiptap/extension-underline";
-import TextAlign from "@tiptap/extension-text-align";
-import Placeholder from "@tiptap/extension-placeholder";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api, API_BASE_URL } from "@/lib/api";
+import { cn, formatLabel as fmt, formatDate as fmtDate, formatCurrency as fmtCurrency, statusBadgeClass as badgeClass } from "@/lib/utils";
 import type { Contract, Workflow as WorkflowType, Approval, WorkflowTemplate } from "@/types/api";
-
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
-function fmt(v?: string | null) {
-  return (v || "—").replace(/_/g, " ").split(" ")
-    .map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p)).join(" ");
-}
-function fmtDate(v?: string | null) {
-  if (!v) return "—";
-  const d = new Date(v);
-  return isNaN(d.getTime()) ? "—"
-    : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-}
-function fmtCurrency(v?: number | null) {
-  if (v == null) return "—";
-  return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(v);
-}
-function badgeClass(v?: string | null) {
-  switch ((v || "").toLowerCase()) {
-    case "high":      return "bg-red-100 text-red-700";
-    case "medium":    return "bg-amber-100 text-amber-700";
-    case "low":
-    case "active":
-    case "approved":  return "bg-green-100 text-green-700";
-    case "draft":
-    case "pending":   return "bg-slate-100 text-slate-600";
-    case "rejected":  return "bg-red-100 text-red-700";
-    case "changes_requested": return "bg-amber-100 text-amber-700";
-    case "review": case "approval": case "authoring":
-    case "execution": case "monitoring": case "request":
-    case "storage":   return "bg-violet-100 text-violet-700";
-    default:          return "bg-slate-100 text-slate-600";
-  }
-}
 
 // ─── Workflow step names (matches DEFAULT_WORKFLOW_STEPS on the backend) ──────
 const STEP_LABELS: Record<number, string> = {
@@ -98,32 +51,39 @@ const STEP_LABELS: Record<number, string> = {
   9: "Renewal / Expiration",
 };
 
-// ─── Document viewer / editor ─────────────────────────────────────────────────
+// ─── Document viewer ─────────────────────────────────────────────────────────
 
 type ViewMode = "preview" | "libreoffice";
 
-function DocumentPanel({ contractId }: { contractId: string }) {
-  const [mode, setMode]         = useState<ViewMode>("preview");
-  const [fileType, setFileType] = useState("");
-  const [hasFile, setHasFile]   = useState(false);
-  const [text, setText]         = useState("");
-  const [docxHtml, setDocxHtml] = useState("");
-  const [loading, setLoading]   = useState(true);
+function DocumentPanel({ contractId, contractTitle }: { contractId: string; contractTitle?: string }) {
+  const [mode, setMode]               = useState<ViewMode>("libreoffice");
+  const [fileType, setFileType]       = useState("");
+  const [hasFile, setHasFile]         = useState(false);
+  const [text, setText]               = useState("");
+  const [docxHtml, setDocxHtml]       = useState("");
+  const [loading, setLoading]         = useState(true);
   const [docxLoading, setDocxLoading] = useState(false);
-  const [wopiUrl, setWopiUrl]   = useState<string | null>(null);
+  const [wopiUrl, setWopiUrl]         = useState<string | null>(null);
   const [wopiLoading, setWopiLoading] = useState(false);
-  const [wopiError, setWopiError] = useState<string | null>(null);
-  const viewUrl = `${API_BASE_URL}/api/documents/view/${contractId}`;
-  const isPdf  = fileType === ".pdf";
-  const isDocx = fileType === ".docx" || fileType === ".doc";
-  const isTxt  = fileType === ".txt" || fileType === ".rtf" || fileType === ".odt";
-  const canLibreOffice = isDocx || fileType === ".odt";
+  const [wopiError, setWopiError]     = useState<string | null>(null);
+
+  const viewUrl        = `${API_BASE_URL}/api/documents/view/${contractId}`;
+  const isPdf          = fileType === ".pdf";
+  const isDocx         = fileType === ".docx" || fileType === ".doc";
+  const isTxt          = fileType === ".txt" || fileType === ".rtf" || fileType === ".odt";
+  const canLibreOffice = hasFile;
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     api.getDocumentText(contractId)
-      .then((r) => { if (!cancelled) { setFileType(r.file_type || ""); setHasFile(r.has_file); setText(r.text || ""); }})
+      .then((r) => {
+        if (!cancelled) {
+          setFileType(r.file_type || "");
+          setHasFile(r.has_file);
+          setText(r.text || "");
+        }
+      })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -133,16 +93,21 @@ function DocumentPanel({ contractId }: { contractId: string }) {
     if (!isDocx || docxHtml || docxLoading) return;
     setDocxLoading(true);
     try {
-      const resp = await fetch(viewUrl);
-      const buf  = await resp.arrayBuffer();
+      const resp    = await fetch(viewUrl);
+      const buf     = await resp.arrayBuffer();
       const mammoth = await import("mammoth");
       const result  = await mammoth.convertToHtml({ arrayBuffer: buf });
       setDocxHtml(result.value);
-    } catch { setDocxHtml("<p style='color:#888'>Could not render DOCX — download to view.</p>"); }
-    finally { setDocxLoading(false); }
+    } catch {
+      setDocxHtml("<p style='color:#888'>Could not render DOCX — download to view.</p>");
+    } finally {
+      setDocxLoading(false);
+    }
   }, [isDocx, docxHtml, docxLoading, viewUrl]);
 
-  useEffect(() => { if (isDocx && mode === "preview") loadDocxHtml(); }, [isDocx, mode, loadDocxHtml]);
+  useEffect(() => {
+    if (isDocx && mode === "preview") loadDocxHtml();
+  }, [isDocx, mode, loadDocxHtml]);
 
   const loadWopiUrl = useCallback(async () => {
     if (wopiUrl || wopiLoading) return;
@@ -162,142 +127,12 @@ function DocumentPanel({ contractId }: { contractId: string }) {
     if (mode === "libreoffice") loadWopiUrl();
   }, [mode, loadWopiUrl]);
 
-  async function handleExport(fmt: "docx" | "pdf") {
-    // Save first so export uses latest content
-    if (editor) await api.saveDocumentHtml(contractId, editor.getHTML(), contractTitle);
-    setExporting(fmt);
-    try {
-      await api.exportDocument(contractId, fmt, `${contractTitle}.${fmt}`);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Export failed.");
-    } finally { setExporting(null); }
+  function handleDownload() {
+    const a = document.createElement("a");
+    a.href = viewUrl;
+    a.download = contractTitle ? `${contractTitle}${fileType}` : `contract${fileType}`;
+    a.click();
   }
-
-  if (!editor) return null;
-
-  return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0F1320]">
-      {/* ── Toolbar ── */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2 dark:border-white/8 dark:bg-white/4">
-        {/* Formatting tools */}
-        <div className="flex items-center gap-0.5">
-          <ToolbarButton active={editor.isActive("bold")}      onClick={() => editor.chain().focus().toggleBold().run()}      title="Bold (Ctrl+B)">
-            <Bold className="h-3.5 w-3.5" />
-          </ToolbarButton>
-          <ToolbarButton active={editor.isActive("italic")}    onClick={() => editor.chain().focus().toggleItalic().run()}    title="Italic (Ctrl+I)">
-            <Italic className="h-3.5 w-3.5" />
-          </ToolbarButton>
-          <ToolbarButton active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Underline (Ctrl+U)">
-            <Underline className="h-3.5 w-3.5" />
-          </ToolbarButton>
-
-          <div className="mx-2 h-5 w-px bg-slate-200 dark:bg-white/10" />
-
-          <ToolbarButton active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="Heading 1">
-            <Heading1 className="h-3.5 w-3.5" />
-          </ToolbarButton>
-          <ToolbarButton active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="Heading 2">
-            <Heading2 className="h-3.5 w-3.5" />
-          </ToolbarButton>
-          <ToolbarButton active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="Heading 3">
-            <Heading3 className="h-3.5 w-3.5" />
-          </ToolbarButton>
-
-          <div className="mx-2 h-5 w-px bg-slate-200 dark:bg-white/10" />
-
-          <ToolbarButton active={editor.isActive("bulletList")}  onClick={() => editor.chain().focus().toggleBulletList().run()}  title="Bullet list">
-            <List className="h-3.5 w-3.5" />
-          </ToolbarButton>
-          <ToolbarButton active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Numbered list">
-            <ListOrdered className="h-3.5 w-3.5" />
-          </ToolbarButton>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          {saveMsg && (
-            <span className={`text-xs font-medium ${saveMsg.startsWith("✓") ? "text-green-600" : "text-red-600"}`}>
-              {saveMsg}
-            </span>
-          )}
-          <Button size="sm" variant="outline" className="rounded-xl" onClick={() => handleSave(false)} disabled={saving}>
-            {saving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
-            {saving ? "Saving…" : "Save"}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50"
-            onClick={() => handleExport("docx")}
-            disabled={!!exporting}
-          >
-            {exporting === "docx"
-              ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              : <Download className="mr-1.5 h-3.5 w-3.5" />
-            }
-            {exporting === "docx" ? "Exporting…" : "Download DOCX"}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-xl border-rose-200 text-rose-700 hover:bg-rose-50"
-            onClick={() => handleExport("pdf")}
-            disabled={!!exporting}
-          >
-            {exporting === "pdf"
-              ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              : <Download className="mr-1.5 h-3.5 w-3.5" />
-            }
-            {exporting === "pdf" ? "Exporting…" : "Download PDF"}
-          </Button>
-        </div>
-      </div>
-
-      {/* ── Auto-save indicator ── */}
-      <div className="flex items-center justify-between border-b border-slate-50 bg-white px-5 py-1.5 dark:border-white/5 dark:bg-transparent">
-        <span className="text-[11px] text-slate-400">
-          Auto-saves every 2 seconds while you type
-        </span>
-        <span className="text-[11px] text-slate-400">
-          Ctrl+B Bold · Ctrl+I Italic · Ctrl+U Underline
-        </span>
-      </div>
-
-      {/* ── Editor canvas ── */}
-      <EditorContent editor={editor} />
-    </div>
-  );
-}
-
-// ─── Document panel (handles load + original file preview) ────────────────────
-
-function DocumentPanel({ contractId, contractTitle }: { contractId: string; contractTitle: string }) {
-  const [loading,     setLoading]     = useState(true);
-  const [hasFile,     setHasFile]     = useState(false);
-  const [fileType,    setFileType]    = useState("");
-  const [initialHtml, setInitialHtml] = useState("");
-  const [showOrig,    setShowOrig]    = useState(false);   // toggle to see original uploaded file
-  const viewUrl = `${API_BASE_URL}/api/documents/view/${contractId}`;
-  const isPdf   = fileType === ".pdf";
-  const isDocx  = fileType === ".docx" || fileType === ".doc";
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Load HTML for the editor and file metadata simultaneously
-      const [htmlRes, textRes] = await Promise.all([
-        api.getDocumentHtml(contractId).catch(() => ({ html: "", title: "" })),
-        api.getDocumentText(contractId).catch(() => ({ text: "", file_type: "", has_file: false })),
-      ]);
-      setHasFile(textRes.has_file);
-      setFileType(textRes.file_type || "");
-      setInitialHtml(htmlRes.html || "");
-    } finally {
-      setLoading(false);
-    }
-  }, [contractId]);
-
-  useEffect(() => { load(); }, [load]);
 
   if (loading) return (
     <div className="flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-16">
@@ -311,11 +146,11 @@ function DocumentPanel({ contractId, contractTitle }: { contractId: string; cont
       <FileText className="h-10 w-10 text-slate-300" />
       <p className="font-medium text-slate-600">No document file attached yet</p>
       <p className="text-sm text-slate-400">
-        Upload a file via the{" "}
-        <Link to="/upload" className="text-blue-500 underline hover:text-blue-600">
-          Upload Pipeline
+        Upload a file from the{" "}
+        <Link to="/contracts" className="text-blue-500 underline hover:text-blue-600">
+          Contracts page
         </Link>{" "}
-        to view it here
+        to view it here.
       </p>
     </div>
   );
@@ -325,7 +160,8 @@ function DocumentPanel({ contractId, contractTitle }: { contractId: string; cont
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-5 py-3">
         <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1">
-          <button onClick={() => setMode("preview")}
+          <button
+            onClick={() => setMode("preview")}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
               mode === "preview" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
             }`}
@@ -333,7 +169,8 @@ function DocumentPanel({ contractId, contractTitle }: { contractId: string; cont
             <Eye className="h-3.5 w-3.5" /> Preview
           </button>
           {canLibreOffice && (
-            <button onClick={() => setMode("libreoffice")}
+            <button
+              onClick={() => setMode("libreoffice")}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                 mode === "libreoffice" ? "bg-indigo-600 text-white" : "text-slate-600 hover:bg-slate-100"
               }`}
@@ -350,7 +187,7 @@ function DocumentPanel({ contractId, contractTitle }: { contractId: string; cont
             {fileType || "file"}
           </Badge>
         </div>
-      )}
+      </div>
 
       {/* LibreOffice (Collabora Online) */}
       {mode === "libreoffice" && (
@@ -383,20 +220,36 @@ function DocumentPanel({ contractId, contractTitle }: { contractId: string; cont
         </div>
       )}
 
-      {/* Content */}
+      {/* Preview */}
       {mode === "preview" && (
         <>
-          {isPdf && <iframe src={viewUrl} title="Contract document" className="w-full" style={{ height: "72vh", border: "none" }} />}
+          {isPdf && (
+            <iframe
+              src={viewUrl}
+              title="Contract document"
+              className="w-full"
+              style={{ height: "72vh", border: "none" }}
+            />
+          )}
           {isDocx && (
-            <div className="prose prose-slate max-w-none overflow-auto px-10 py-8" style={{ minHeight: "60vh", maxHeight: "72vh" }}>
-              {docxLoading
-                ? <div className="flex items-center gap-2 py-10 text-slate-500"><Loader2 className="h-5 w-5 animate-spin" /> Rendering…</div>
-                : <div dangerouslySetInnerHTML={{ __html: docxHtml || "<p>No content.</p>" }} />
-              }
+            <div
+              className="prose prose-slate max-w-none overflow-auto px-10 py-8"
+              style={{ minHeight: "60vh", maxHeight: "72vh" }}
+            >
+              {docxLoading ? (
+                <div className="flex items-center gap-2 py-10 text-slate-500">
+                  <Loader2 className="h-5 w-5 animate-spin" /> Rendering…
+                </div>
+              ) : (
+                <div dangerouslySetInnerHTML={{ __html: docxHtml || "<p>No content.</p>" }} />
+              )}
             </div>
           )}
           {isTxt && (
-            <pre className="overflow-auto whitespace-pre-wrap break-words px-10 py-8 font-mono text-sm text-slate-800" style={{ minHeight: "50vh", maxHeight: "72vh" }}>
+            <pre
+              className="overflow-auto whitespace-pre-wrap break-words px-10 py-8 font-mono text-sm text-slate-800"
+              style={{ minHeight: "50vh", maxHeight: "72vh" }}
+            >
               {text || <span className="italic text-slate-400">No text extracted.</span>}
             </pre>
           )}
@@ -411,38 +264,7 @@ function DocumentPanel({ contractId, contractTitle }: { contractId: string; cont
           )}
         </>
       )}
-
-      {/* Rich text editor — always shown */}
-      <RichTextEditor
-        contractId={contractId}
-        contractTitle={contractTitle}
-        initialHtml={initialHtml}
-      />
     </div>
-  );
-}
-
-function OriginalDocxViewer({ viewUrl }: { viewUrl: string }) {
-  const [html, setHtml]     = useState("");
-  const [loading, setLoad]  = useState(true);
-  useEffect(() => {
-    fetch(viewUrl)
-      .then((r) => r.arrayBuffer())
-      .then(async (buf) => {
-        const mammoth = await import("mammoth");
-        const result  = await mammoth.convertToHtml({ arrayBuffer: buf });
-        setHtml(result.value);
-      })
-      .catch(() => setHtml("<p style='color:#888'>Could not render — download to view.</p>"))
-      .finally(() => setLoad(false));
-  }, [viewUrl]);
-  if (loading) return <div className="flex items-center gap-2 p-8 text-slate-400"><Loader2 className="h-5 w-5 animate-spin" /> Rendering…</div>;
-  return (
-    <div
-      className="prose prose-slate max-w-none overflow-auto px-10 py-8"
-      style={{ maxHeight: "60vh" }}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
   );
 }
 
@@ -992,6 +814,129 @@ function ApprovalCard({
   );
 }
 
+// ─── Contract AI Chat ─────────────────────────────────────────────────────────
+
+type AiChatMsg = { id: string; role: "user" | "assistant"; content: string; pending?: boolean };
+
+function ContractAIChat({ contractId }: { contractId: string }) {
+  const [messages, setMessages] = useState<AiChatMsg[]>([
+    { id: "intro", role: "assistant", content: "Hi! I'm your contract assistant. Ask me anything about this document or any general legal question." },
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const send = async () => {
+    const q = input.trim();
+    if (!q || loading) return;
+    setInput("");
+    setLoading(true);
+    const uid = `${Date.now()}-u`;
+    const aid = `${Date.now()}-a`;
+    setMessages((prev) => [
+      ...prev,
+      { id: uid, role: "user", content: q },
+      { id: aid, role: "assistant", content: "Thinking…", pending: true },
+    ]);
+    try {
+      const data = await api.chat(q, contractId);
+      const answer =
+        typeof data?.answer === "string" && data.answer.trim()
+          ? data.answer
+          : "I couldn't generate a response right now.";
+      setMessages((prev) =>
+        prev.map((m) => (m.id === aid ? { ...m, content: answer, pending: false } : m))
+      );
+    } catch {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === aid ? { ...m, content: "Request failed — please try again.", pending: false } : m
+        )
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-4 shrink-0">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20">
+          <Bot className="h-5 w-5 text-white" />
+        </div>
+        <div>
+          <p className="font-semibold text-white">AI Contract Assistant</p>
+          <p className="text-xs text-white/70">Ask questions about this contract or general legal topics</p>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 space-y-3 overflow-y-auto px-6 py-5" style={{ minHeight: 0 }}>
+        {messages.map((msg) => {
+          const isUser = msg.role === "user";
+          return (
+            <div key={msg.id} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+              <div className={`flex max-w-[80%] items-start gap-2.5 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+                <div className={cn(
+                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full mt-0.5",
+                  isUser
+                    ? "bg-slate-900 text-white"
+                    : "border border-slate-200 bg-white text-violet-600"
+                )}>
+                  {isUser ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
+                </div>
+                <div className={cn(
+                  "rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm",
+                  isUser
+                    ? "bg-slate-900 text-white"
+                    : "border border-slate-200 bg-slate-50 text-slate-700"
+                )}>
+                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                  {msg.pending && (
+                    <span className="mt-1 flex items-center gap-1 text-xs text-slate-400">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Generating…
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input */}
+      <div className="border-t border-slate-100 bg-slate-50 px-4 py-3 shrink-0">
+        <div className="flex items-end gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+          <textarea
+            ref={textareaRef}
+            className="min-h-[36px] flex-1 resize-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+            placeholder="Ask about this contract…"
+            rows={1}
+          />
+          <button
+            onClick={send}
+            disabled={loading || !input.trim()}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600 text-white transition hover:bg-violet-700 disabled:opacity-40"
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+          </button>
+        </div>
+        <p className="mt-1.5 text-center text-[10px] text-slate-400">Enter to send · Shift+Enter for new line</p>
+      </div>
+    </Card>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ContractDetailsPage() {
@@ -1052,13 +997,6 @@ export default function ContractDetailsPage() {
           <Button variant="outline" asChild className="rounded-xl">
             <Link to="/contracts"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Link>
           </Button>
-          {contract?.id && (
-            <Button variant="outline" asChild className="rounded-xl">
-              <Link to={`/ai-analysis?contractId=${contract.id}`}>
-                <Bot className="mr-2 h-4 w-4" /> AI Analyse
-              </Link>
-            </Button>
-          )}
           <Button variant="destructive" onClick={handleDelete} disabled={deleting || !contract} className="rounded-xl">
             <Trash2 className="mr-2 h-4 w-4" />
             {deleting ? "Deleting…" : "Delete"}
@@ -1118,8 +1056,11 @@ export default function ContractDetailsPage() {
             </div>
           </div>
 
-          {/* ── Document viewer / editor ──────────────────────────────────── */}
-          <DocumentPanel contractId={contract.id} contractTitle={contract.title} />
+          {/* ── Document viewer + AI Chat (side by side) ─────────────────── */}
+          <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+            <DocumentPanel contractId={contract.id} contractTitle={contract.title} />
+            <ContractAIChat contractId={contract.id} />
+          </div>
 
           {/* ── Details + sidebar ─────────────────────────────────────────── */}
           <div className="grid gap-6 xl:grid-cols-[1.7fr_0.8fr]">
@@ -1219,9 +1160,6 @@ export default function ContractDetailsPage() {
                         ))}
                       </ul>
                     )}
-                    <Button variant="outline" asChild size="sm" className="w-full rounded-xl">
-                      <Link to={`/ai-analysis?contractId=${contract.id}`}>Full Analysis</Link>
-                    </Button>
                   </CardContent>
                 </Card>
               )}

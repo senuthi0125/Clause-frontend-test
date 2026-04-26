@@ -6,15 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { formatLabel } from "@/lib/utils";
 import type { Template } from "@/types/api";
-
-function formatLabel(value: string) {
-  return value
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
-    .join(" ");
-}
 
 export default function ContractTemplatePage() {
   const navigate = useNavigate();

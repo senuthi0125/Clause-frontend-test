@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { ChatPopup } from "@/components/chat-popup";
 import {
   BarChart2,
   Bell,
@@ -12,13 +13,11 @@ import {
   Moon,
   Shield,
   ShieldAlert,
-  Sparkles,
   Sun,
   Users,
   ScrollText,
   LockKeyhole,
   Workflow,
-  UploadCloud,
   Settings,
   X,
 } from "lucide-react";
@@ -104,9 +103,7 @@ export function AppShell({
   const mainNavigation = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Contracts", href: "/contracts", icon: FileText },
-    { label: "Upload Contract", href: "/upload", icon: UploadCloud },
-    { label: "AI Analysis", href: "/ai-analysis", icon: Sparkles },
-    { label: "Conflict Detection", href: "/conflict-detection", icon: Shield },
+{ label: "Conflict Detection", href: "/conflict-detection", icon: Shield },
     { label: "Calendar", href: "/calendar", icon: CalendarDays },
     { label: "Risk Analysis", href: "/risk-analysis", icon: ShieldAlert },
     { label: "Settings", href: "/settings", icon: Settings },
@@ -484,6 +481,8 @@ export function AppShell({
           </main>
         </div>
       </div>
+
+      <ChatPopup />
     </div>
   );
 }
