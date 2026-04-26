@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Plus, Search, Trash2, Upload, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useUser } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/use-role";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";

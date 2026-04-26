@@ -311,42 +311,7 @@ export const api = {
       body: JSON.stringify({ html, title: title ?? "Contract" }),
     }),
 
-  exportDocument: async (contractId: string, format: "docx" | "pdf", filename: string): Promise<void> => {
-    const token = await (async () => {
-      if (tokenProvider) {
-        try { const t = await tokenProvider(); if (t) return t; } catch {}
-      }
-      if (typeof window !== "undefined") {
-        try { return window.localStorage.getItem("clause_auth_token"); } catch {}
-      }
-      return null;
-    })();
 
-    const response = await fetch(
-      `${API_BASE_URL}/api/documents/export/${contractId}?format=${format}`,
-      {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      }
-    );
-
-    if (!response.ok) {
-      const text = await response.text();
-      let msg = `Export failed (${response.status})`;
-      try { msg = (JSON.parse(text) as { detail?: string }).detail ?? msg; } catch {}
-      throw new Error(msg);
-    }
-
-    const blob = await response.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  },
 
   scanContractConflicts: (contractId: string) =>
     request<ConflictResult>(`/api/ai/conflicts/scan/${contractId}`, {
