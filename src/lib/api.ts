@@ -14,6 +14,9 @@ import type {
   DashboardStats,
   DraftResponse,
   LifecycleStats,
+  ReportDefinition,
+  ReportPreset,
+  ReportResult,
   Template,
   TemplatesResponse,
   UserPreferences,
@@ -26,7 +29,7 @@ import type {
 
 const API_BASE_URL =
   (import.meta as ImportMeta & { env?: Record<string, string> }).env
-    ?.VITE_API_BASE_URL || "http://localhost:8000";
+    ?.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 class ApiError extends Error {
   status: number;
@@ -75,8 +78,8 @@ async function resolveToken(): Promise<string | null> {
     try {
       const token = await tokenProvider();
       if (token) return token;
-    } catch (err) {
-      console.warn("Auth token provider failed:", err);
+    } catch {
+      // Fall through to stored token
     }
   }
 
@@ -287,6 +290,11 @@ export const api = {
       `/api/documents/text/${contractId}`
     ),
 
+  getWopiUrl: (contractId: string) =>
+    request<{ editor_url: string; file_type: string; filename: string }>(
+      `/api/documents/wopi-url/${contractId}`
+    ),
+
   saveDocumentText: (contractId: string, text: string) =>
     request<{ message: string; version?: number; file_type?: string }>(
       `/api/documents/text/${contractId}`,
@@ -357,6 +365,16 @@ export const api = {
     return request<AiChatResponse>("/api/ai/chat", {
       method: "POST",
       body: JSON.stringify(payload),
+    });
+  },
+
+  chatWithFile: (question: string, file: File) => {
+    const form = new FormData();
+    form.append("question", question);
+    form.append("file", file);
+    return request<AiChatResponse>("/api/ai/chat-file", {
+      method: "POST",
+      body: form,
     });
   },
 
@@ -530,6 +548,38 @@ export const api = {
     request<{ message: string }>(`/api/workflows/templates/${id}`, {
       method: "DELETE",
     }),
+  // ── Reports ─────────────────────────────────────────────────────────────────
+  runReport: (definition: ReportDefinition) =>
+    request<ReportResult>("/api/reports/run", {
+      method: "POST",
+      body: JSON.stringify(definition),
+    }),
+
+  getReportPresets: () => request<ReportPreset[]>("/api/reports/presets"),
+
+  downloadReportBlob: async (
+    definition: ReportDefinition,
+    format: "csv" | "pdf",
+    title = "CLAUSE Report"
+  ): Promise<{ blob: Blob; filename: string }> => {
+    const token = await resolveToken();
+    const res = await fetch(`${API_BASE_URL}/api/reports/export`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ definition, format, title }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new ApiError(`Export failed (${res.status})`, res.status, text);
+    }
+    const disposition = res.headers.get("content-disposition") ?? "";
+    const match = disposition.match(/filename=([^\s;]+)/);
+    const filename = match?.[1] ?? `report.${format}`;
+    return { blob: await res.blob(), filename };
+  },
 
   listAuditLogs: (
     params: {

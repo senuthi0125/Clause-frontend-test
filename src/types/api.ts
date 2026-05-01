@@ -373,3 +373,71 @@ export type LifecycleStats = {
   became_active: number;
   upcoming_renewals: number;
 };
+
+// ─── Reports ─────────────────────────────────────────────
+
+export type ReportDimension =
+  | "contract_type"
+  | "status"
+  | "workflow_stage"
+  | "risk_level"
+  | "created_by"
+  | "month"
+  | "quarter"
+  | "year"
+  | "tags";
+
+export type ReportMeasure =
+  | "count"
+  | "total_value"
+  | "avg_value"
+  | "min_value"
+  | "max_value"
+  | "avg_risk_score"
+  | "max_risk_score"
+  | "min_risk_score";
+
+export type ReportChartType =
+  | "table"
+  | "bar"
+  | "pie"
+  | "line"
+  | "donut"
+  | "stacked_bar";
+
+export type ReportDefinition = {
+  dimensions: ReportDimension[];
+  measures: ReportMeasure[];
+  filters?: Record<string, unknown> | null;
+  chart_type: ReportChartType;
+  sort_by?: string | null;
+  sort_order?: "asc" | "desc";
+  limit?: number | null;
+};
+
+export type ReportColumn = {
+  key: string;
+  label: string;
+  type: string;
+};
+
+export type ReportSummary = {
+  total_rows: number;
+  total_contracts_matched: number;
+  summary_stats: Record<string, number>;
+};
+
+export type ReportResult = {
+  columns: ReportColumn[];
+  rows: Record<string, unknown>[];
+  summary: ReportSummary;
+  chart_type: ReportChartType;
+  generated_at: string;
+};
+
+export type ReportPreset = {
+  id: string;
+  name: string;
+  description: string;
+  definition: ReportDefinition;
+};

@@ -7,15 +7,8 @@ import { AppCard } from "@/components/ui/app-card";
 import { AppBadge } from "@/components/ui/app-badge";
 import { AppEmptyState } from "@/components/ui/app-empty-state";
 import { api } from "@/lib/api";
+import { formatLabel } from "@/lib/utils";
 import type { Template } from "@/types/api";
-
-function formatLabel(value: string) {
-  return value
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
-    .join(" ");
-}
 
 export default function ContractTemplatePage() {
   const navigate = useNavigate();

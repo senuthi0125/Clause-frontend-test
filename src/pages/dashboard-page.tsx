@@ -25,10 +25,10 @@ import {
   Bar,
 } from "recharts";
 import { AppShell } from "@/components/layout/app-shell";
-import { AppCard } from "@/components/ui/app-card";
-import { AppBadge } from "@/components/ui/app-badge";
-import { AppEmptyState } from "@/components/ui/app-empty-state";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { formatLabel as formatTypeLabel, formatDate, statusBadgeClass as statusBadgeClass } from "@/lib/utils";
 import { usePreferences } from "@/hooks/use-preferences";
 import { useTheme } from "@/components/theme-provider";
 import type { DashboardStats } from "@/types/api";
@@ -114,24 +114,6 @@ type ActivityItem = {
   updated_at: string;
 };
 
-function formatTypeLabel(value: string) {
-  return value
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p))
-    .join(" ");
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Invalid date";
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 function getDaysLabel(days: number) {
   if (days < 0) return "Overdue";
   if (days === 0) return "Due today";
@@ -148,22 +130,6 @@ function getPercent(value: number, total: number) {
 function getMinBarWidth(value: number, total: number) {
   if (!total || value <= 0) return 0;
   return Math.max((value / total) * 100, 8);
-}
-
-function statusBadgeVariant(
-  status?: string
-): "slate" | "emerald" | "rose" | "blue" {
-  switch ((status || "").toLowerCase()) {
-    case "active":
-      return "emerald";
-    case "expired":
-      return "rose";
-    case "renewed":
-      return "blue";
-    case "draft":
-    default:
-      return "slate";
-  }
 }
 
 function buildTrendData(activity: ActivityItem[]) {
@@ -259,7 +225,7 @@ function PinnedContractsSection({
         {pinned.map((contract) => (
           <div
             key={contract.id}
-            className="group flex items-center gap-3 rounded-2xl border bg-white px-4 py-3 shadow-sm transition-all hover:shadow-md dark:border-white/8 dark:bg-[#131829]"
+            className="group flex items-center gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm transition-all hover:shadow-md"
             style={{ borderColor: "#E2E8F0" }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLDivElement).style.borderColor = t.border;
@@ -270,7 +236,7 @@ function PinnedContractsSection({
           >
             <Link
               to={`/contracts/${contract.id}`}
-              className="flex items-center gap-2 text-sm font-semibold text-slate-900 transition-colors dark:text-white"
+              className="flex items-center gap-2 text-sm font-semibold text-slate-900 transition-colors"
               onMouseEnter={(e) => (e.currentTarget.style.color = t.text)}
               onMouseLeave={(e) => (e.currentTarget.style.color = "")}
             >
@@ -279,12 +245,13 @@ function PinnedContractsSection({
             </Link>
 
             {contract.status && (
-              <AppBadge
-                variant={statusBadgeVariant(contract.status)}
-                className="px-2 py-0.5"
+              <Badge
+                className={`rounded-full px-2 py-0.5 text-xs ${statusBadgeClass(
+                  contract.status
+                )}`}
               >
                 {formatTypeLabel(contract.status)}
-              </AppBadge>
+              </Badge>
             )}
 
             <button
@@ -396,8 +363,6 @@ export default function DashboardPage() {
       themed: true,
       iconWrap: "",
       accent: "",
-      cardBg:
-        "bg-violet-50 border-violet-100 dark:bg-violet-500/10 dark:border-violet-500/20",
     },
     {
       key: "active_contracts" as const,
@@ -409,8 +374,6 @@ export default function DashboardPage() {
       iconWrap:
         "bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20",
       accent: "text-emerald-600",
-      cardBg:
-        "bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20",
     },
     {
       key: "pending_approvals" as const,
@@ -422,8 +385,6 @@ export default function DashboardPage() {
       iconWrap:
         "bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20",
       accent: "text-amber-600",
-      cardBg:
-        "bg-amber-50 border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20",
     },
     {
       key: "high_risk" as const,
@@ -435,8 +396,6 @@ export default function DashboardPage() {
       iconWrap:
         "bg-gradient-to-br from-rose-500 to-red-500 text-white shadow-lg shadow-rose-500/20",
       accent: "text-rose-600",
-      cardBg:
-        "bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20",
     },
   ];
 
@@ -473,8 +432,8 @@ export default function DashboardPage() {
 
   return (
     <AppShell
-      title="Contract Overview"
-      subtitle="Live overview of Total Contracts, Active Contracts, Pending Approvals, and High Risk Items"
+      title="Contract operations overview"
+      subtitle="Live overview of contracts, approvals, activity, and AI-powered risk signals."
       contractGroups={contractGroups}
     >
       {error ? (
@@ -506,14 +465,14 @@ export default function DashboardPage() {
               const Icon = card.icon;
 
               return (
-                <div
+                <Card
                   key={card.key}
-                  className={`overflow-hidden rounded-3xl border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${card.cardBg}`}
+                  className="overflow-hidden rounded-3xl border border-slate-200/80 dark:border-white/8 bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
                 >
-                  <div className="p-6">
+                  <CardContent className="p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div className="space-y-3">
-                        <p className="text-sm font-medium text-slate-500 dark:text-slate-300">
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                           {card.title}
                         </p>
                         <div className="flex items-end gap-2">
@@ -529,9 +488,7 @@ export default function DashboardPage() {
                             Live
                           </span>
                         </div>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                          {card.helper}
-                        </p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{card.helper}</p>
                       </div>
 
                       <div
@@ -550,20 +507,25 @@ export default function DashboardPage() {
                         <Icon className="h-5 w-5" />
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               );
             })}
           </section>
         ) : (
-          <AppEmptyState
-            title="All stat cards are hidden."
-            description="Go to Settings to show them again."
-            className="rounded-3xl"
-          />
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-8 text-center">
+            <p className="text-sm text-slate-500">All stat cards are hidden.</p>
+            <Link
+              to="/settings"
+              className="mt-2 block text-sm font-medium hover:underline"
+              style={{ color: t.text }}
+            >
+              Go to Settings to show them
+            </Link>
+          </div>
         )}
 
-        <AppCard tone="soft">
+        <section className="rounded-3xl border border-slate-200/80 dark:border-white/8 bg-white dark:bg-[#131829] p-6 shadow-sm">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <div className="mb-1.5 flex items-center gap-2">
@@ -576,7 +538,9 @@ export default function DashboardPage() {
                 Contract activity — last 30 days
               </h2>
             </div>
-            <AppBadge variant="blue">Live data</AppBadge>
+            <Badge className="rounded-full border border-indigo-200/60 bg-indigo-50 text-indigo-700 hover:bg-indigo-50">
+              Live data
+            </Badge>
           </div>
 
           {loading ? (
@@ -645,372 +609,306 @@ export default function DashboardPage() {
               </AreaChart>
             </ResponsiveContainer>
           )}
-        </AppCard>
+        </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.45fr_0.95fr]">
-          <AppCard tone="soft">
-            <div className="mb-6 flex items-start justify-between gap-4">
-              <div>
-                <div className="mb-2 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" style={{ color: t.muted }} />
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    Status snapshot
-                  </span>
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                  Contract status overview
-                </h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Real-time status distribution from your contract repository.
-                </p>
-              </div>
-              {topStatus ? (
-                <div className="rounded-2xl border border-violet-100 dark:border-violet-500/20 bg-violet-100/70 dark:bg-violet-500/15 px-4 py-3 text-right">
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    Largest segment
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
-                    {formatTypeLabel(topStatus.status)}
-                  </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {topStatus.count} contracts
-                  </p>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="space-y-4">
-              {!loading && statuses.length === 0 ? (
-                <AppEmptyState title="No status data found." />
-              ) : null}
-
-              {statuses.map((item) => (
-                <div
-                  key={item.status}
-                  className="rounded-2xl border border-violet-100 dark:border-violet-500/20 bg-violet-100/55 dark:bg-violet-500/12 p-4"
-                >
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-white">
-                        {formatTypeLabel(item.status)}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {getPercent(item.count, totalContracts)}% of all
-                        contracts
-                      </p>
-                    </div>
-                    <AppBadge variant="dark">{item.count}</AppBadge>
+          <Card className="rounded-3xl border border-slate-200/80 dark:border-white/8 bg-card shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" style={{ color: t.muted }} />
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                      Status snapshot
+                    </span>
                   </div>
-
-                  <div className="h-2.5 overflow-hidden rounded-full bg-slate-200 dark:bg-white/15">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${getMinBarWidth(
-                          item.count,
-                          totalContracts
-                        )}%`,
-                        background: `linear-gradient(to right, ${t.from}, ${t.to})`,
-                      }}
-                    />
+                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                    Contract status overview
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Real-time status distribution from your contract repository.
+                  </p>
+                </div>
+                {topStatus ? (
+                  <div className="rounded-2xl border border-slate-200 dark:border-white/8 bg-slate-50 dark:bg-white/5 px-4 py-3 text-right">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                      Largest segment
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
+                      {formatTypeLabel(topStatus.status)}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {topStatus.count} contracts
+                    </p>
                   </div>
-                </div>
-              ))}
-            </div>
-          </AppCard>
-
-          <AppCard tone="soft">
-            <div className="mb-6">
-              <div className="mb-2 flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 text-violet-500" />
-                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  AI risk summary
-                </span>
-              </div>
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                Risk distribution
-              </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Based on your backend AI analysis data.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <div className="relative flex h-[270px] w-[270px] items-center justify-center">
-                <svg viewBox="0 0 240 240" className="-rotate-90 h-[240px] w-[240px]">
-                  <circle
-                    cx="120"
-                    cy="120"
-                    r={radius}
-                    fill="none"
-                    stroke={dark ? "rgba(255,255,255,0.08)" : "#E5E7EB"}
-                    strokeWidth="24"
-                  />
-                  {(() => {
-                    let cumulativeOffset = 0;
-                    return ringSegments.map((segment) => {
-                      const dash = (segment.percent / 100) * circumference;
-                      const dashArray = `${dash} ${circumference}`;
-                      const dashOffset = -cumulativeOffset;
-                      cumulativeOffset += dash + 10;
-
-                      return (
-                        <circle
-                          key={segment.key}
-                          cx="120"
-                          cy="120"
-                          r={radius}
-                          fill="none"
-                          stroke={segment.color}
-                          strokeWidth="24"
-                          strokeLinecap="round"
-                          strokeDasharray={dashArray}
-                          strokeDashoffset={dashOffset}
-                        />
-                      );
-                    });
-                  })()}
-                </svg>
-
-                <div className="absolute flex flex-col items-center justify-center text-center">
-                  <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                    Total
-                  </span>
-                  <span className="mt-1 text-5xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                    {loading ? "..." : totalRisk}
-                  </span>
-                  <span className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Analysed contracts
-                  </span>
-                </div>
+                ) : null}
               </div>
 
-              <div className="mt-2 w-full space-y-3">
-                {[
-                  {
-                    label: "Low risk",
-                    count: lowRisk,
-                    percent: getPercent(lowRisk, totalRisk),
-                    color: t.ring1,
-                  },
-                  {
-                    label: "Medium risk",
-                    count: mediumRisk,
-                    percent: getPercent(mediumRisk, totalRisk),
-                    color: t.ring2,
-                  },
-                  {
-                    label: "High risk",
-                    count: highRisk,
-                    percent: getPercent(highRisk, totalRisk),
-                    color: "#F43F5E",
-                  },
-                ].map((item) => (
+              <div className="space-y-4">
+                {!loading && statuses.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                    No status data found.
+                  </div>
+                ) : null}
+
+                {statuses.map((item) => (
                   <div
-                    key={item.label}
-                    className="flex items-center justify-between rounded-2xl border border-violet-100 dark:border-violet-500/20 bg-violet-100/55 dark:bg-violet-500/12 px-4 py-3"
+                    key={item.status}
+                    className="rounded-2xl border border-slate-200/80 dark:border-white/8 bg-slate-50/70 dark:bg-white/4 p-4"
                   >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      />
+                    <div className="mb-3 flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white">
-                          {item.label}
+                        <p className="font-medium text-slate-900 dark:text-white">
+                          {formatTypeLabel(item.status)}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {item.count} contracts
+                          {getPercent(item.count, totalContracts)}% of all
+                          contracts
                         </p>
                       </div>
+                      <Badge className="rounded-full bg-slate-900 px-3 py-1 text-white hover:bg-slate-900">
+                        {item.count}
+                      </Badge>
                     </div>
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                      {item.percent}%
-                    </span>
+
+                    <div className="h-2.5 overflow-hidden rounded-full bg-slate-200 dark:bg-white/15">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${getMinBarWidth(
+                            item.count,
+                            totalContracts
+                          )}%`,
+                          background: `linear-gradient(to right, ${t.from}, ${t.to})`,
+                        }}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
-          </AppCard>
-        </section>
+            </CardContent>
+          </Card>
 
-        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          <AppCard tone="soft">
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <div className="mb-1.5 flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-cyan-500" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
-                    Type breakdown
+          <Card className="rounded-3xl border border-slate-200/80 dark:border-white/8 bg-card shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-6">
+                <div className="mb-2 flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-violet-500" />
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                    AI risk summary
                   </span>
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                  Contracts by type
-                </h2>
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="h-48 w-full animate-pulse rounded-xl bg-slate-200" />
-            ) : typeChartData.length === 0 ? (
-              <AppEmptyState title="No type data available." />
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart
-                  data={typeChartData}
-                  margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke={
-                      dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"
-                    }
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="name"
-                    tick={{
-                      fontSize: 11,
-                      fill: dark ? "#6B7280" : "#94A3B8",
-                    }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{
-                      fontSize: 11,
-                      fill: dark ? "#6B7280" : "#94A3B8",
-                    }}
-                    axisLine={false}
-                    tickLine={false}
-                    allowDecimals={false}
-                  />
-                  <Tooltip content={<ChartTooltip dark={dark} />} />
-                  <Bar
-                    dataKey="count"
-                    name="Contracts"
-                    fill={t.from}
-                    radius={[6, 6, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </AppCard>
-
-          <AppCard tone="soft">
-            <div className="mb-6 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                  Upcoming and due documents
+                  Risk distribution
                 </h2>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Contracts expiring within 30 days. Pin any to your dashboard
-                  for quick access.
+                  Based on your backend AI analysis data.
                 </p>
               </div>
-              <div
-                className="hidden rounded-2xl px-3 py-2 text-right sm:block"
-                style={{ backgroundColor: t.light }}
-              >
-                <p
-                  className="text-xs uppercase tracking-[0.2em]"
-                  style={{ color: t.muted }}
-                >
-                  Focus
-                </p>
-                <p className="text-sm font-semibold" style={{ color: t.text }}>
-                  Time-sensitive
-                </p>
-              </div>
-            </div>
 
-            <div className="space-y-4">
-              {!loading && expiring.length === 0 ? (
-                <AppEmptyState title="No active contracts are expiring soon." />
-              ) : null}
+              <div className="flex flex-col items-center">
+                <div className="relative flex h-[270px] w-[270px] items-center justify-center">
+                  <svg viewBox="0 0 240 240" className="-rotate-90 h-[240px] w-[240px]">
+                    <circle
+                      cx="120"
+                      cy="120"
+                      r={radius}
+                      fill="none"
+                      stroke="#E5E7EB"
+                      strokeWidth="24"
+                    />
+                    {(() => {
+                      let cumulativeOffset = 0;
+                      return ringSegments.map((segment) => {
+                        const dash = (segment.percent / 100) * circumference;
+                        const dashArray = `${dash} ${circumference}`;
+                        const dashOffset = -cumulativeOffset;
+                        cumulativeOffset += dash + 10;
 
-              {expiring.map((item) => {
-                const pinned = prefs.pinned_contracts.some(
-                  (p) => p.id === item.id
-                );
+                        return (
+                          <circle
+                            key={segment.key}
+                            cx="120"
+                            cy="120"
+                            r={radius}
+                            fill="none"
+                            stroke={segment.color}
+                            strokeWidth="24"
+                            strokeLinecap="round"
+                            strokeDasharray={dashArray}
+                            strokeDashoffset={dashOffset}
+                          />
+                        );
+                      });
+                    })()}
+                  </svg>
 
-                return (
-                  <div
-                    key={item.id}
-                    className="group flex items-start justify-between gap-4 rounded-2xl border border-violet-100 dark:border-violet-500/20 bg-violet-100/55 dark:bg-violet-500/12 px-5 py-4 transition-all duration-200"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span
-                        className="mt-2 h-3 w-3 rounded-full shadow-sm"
-                        style={{
-                          backgroundColor: t.muted,
-                          boxShadow: `0 2px 6px ${t.from}50`,
-                        }}
-                      />
-                      <div>
-                        <p className="font-semibold text-slate-900 dark:text-white">
-                          {item.title}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                          {formatTypeLabel(item.contract_type)} · ends{" "}
-                          {formatDate(item.end_date)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex shrink-0 flex-col items-end gap-2">
-                      <AppBadge variant="dark">
-                        {getDaysLabel(item.days_remaining)}
-                      </AppBadge>
-                      <button
-                        onClick={() =>
-                          pinned
-                            ? unpinContract(item.id)
-                            : pinContract({ id: item.id, title: item.title })
-                        }
-                        className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all"
-                        style={
-                          pinned
-                            ? { backgroundColor: t.light, color: t.text }
-                            : { color: "#94A3B8" }
-                        }
-                      >
-                        {pinned ? (
-                          <PinOff className="h-3 w-3" />
-                        ) : (
-                          <Pin className="h-3 w-3" />
-                        )}
-                        {pinned ? "Pinned" : "Pin"}
-                      </button>
-                    </div>
+                  <div className="absolute flex flex-col items-center justify-center text-center">
+                    <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
+                      Total
+                    </span>
+                    <span className="mt-1 text-5xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                      {loading ? "..." : totalRisk}
+                    </span>
+                    <span className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      Analysed contracts
+                    </span>
                   </div>
-                );
-              })}
-            </div>
-          </AppCard>
+                </div>
+
+                <div className="mt-2 w-full space-y-3">
+                  {[
+                    {
+                      label: "Low risk",
+                      count: lowRisk,
+                      percent: getPercent(lowRisk, totalRisk),
+                      color: t.ring1,
+                    },
+                    {
+                      label: "Medium risk",
+                      count: mediumRisk,
+                      percent: getPercent(mediumRisk, totalRisk),
+                      color: t.ring2,
+                    },
+                    {
+                      label: "High risk",
+                      count: highRisk,
+                      percent: getPercent(highRisk, totalRisk),
+                      color: "#F43F5E",
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-center justify-between rounded-2xl border border-slate-200 dark:border-white/8 bg-slate-50 dark:bg-white/4 px-4 py-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">
+                            {item.label}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {item.count} contracts
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        {item.percent}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </section>
 
-        <section>
-          <AppCard tone="soft">
-            <div className="mb-6 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                  Recent activity
-                </h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Latest updates. Pin any contract for quick access.
-                </p>
+        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          <Card className="rounded-3xl border border-slate-200/80 dark:border-white/8 bg-card shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4 text-cyan-500" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                      Type breakdown
+                    </span>
+                  </div>
+                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                    Contracts by type
+                  </h2>
+                </div>
               </div>
-              <TrendingUp className="h-5 w-5 text-slate-400" />
-            </div>
 
-            <div className="space-y-4">
-              {!loading && activity.length === 0 ? (
-                <AppEmptyState title="No recent activity found." />
-              ) : null}
+              {loading ? (
+                <div className="h-48 w-full animate-pulse rounded-xl bg-slate-200" />
+              ) : typeChartData.length === 0 ? (
+                <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-slate-200 text-sm text-slate-500">
+                  No type data available.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart
+                    data={typeChartData}
+                    margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke={
+                        dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"
+                      }
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="name"
+                      tick={{
+                        fontSize: 11,
+                        fill: dark ? "#6B7280" : "#94A3B8",
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{
+                        fontSize: 11,
+                        fill: dark ? "#6B7280" : "#94A3B8",
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                      allowDecimals={false}
+                    />
+                    <Tooltip content={<ChartTooltip dark={dark} />} />
+                    <Bar
+                      dataKey="count"
+                      name="Contracts"
+                      fill={t.from}
+                      radius={[6, 6, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
 
-              <div className="grid gap-4 lg:grid-cols-2">
-                {activity.map((item) => {
+          <Card className="rounded-3xl border border-slate-200/80 dark:border-white/8 bg-card shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                    Upcoming and due documents
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Contracts expiring within 30 days. Pin any to your dashboard
+                    for quick access.
+                  </p>
+                </div>
+                <div
+                  className="hidden rounded-2xl px-3 py-2 text-right sm:block"
+                  style={{ backgroundColor: t.light }}
+                >
+                  <p
+                    className="text-xs uppercase tracking-[0.2em]"
+                    style={{ color: t.muted }}
+                  >
+                    Focus
+                  </p>
+                  <p className="text-sm font-semibold" style={{ color: t.text }}>
+                    Time-sensitive
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {!loading && expiring.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                    No active contracts are expiring soon.
+                  </div>
+                ) : null}
+
+                {expiring.map((item) => {
                   const pinned = prefs.pinned_contracts.some(
                     (p) => p.id === item.id
                   );
@@ -1018,70 +916,155 @@ export default function DashboardPage() {
                   return (
                     <div
                       key={item.id}
-                      className="rounded-2xl border border-violet-100 dark:border-violet-500/20 bg-violet-100/50 dark:bg-violet-500/12 px-4 py-4 transition-all duration-200 hover:border-violet-200 dark:hover:border-violet-400/30 hover:shadow-sm"
+                      className="group flex items-start justify-between gap-4 rounded-2xl border border-slate-200 dark:border-white/8 bg-slate-50/70 dark:bg-white/4 px-5 py-4 transition-all duration-200"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-slate-900 dark:text-white">
+                      <div className="flex items-start gap-3">
+                        <span
+                          className="mt-2 h-3 w-3 rounded-full shadow-sm"
+                          style={{
+                            backgroundColor: t.muted,
+                            boxShadow: `0 2px 6px ${t.from}50`,
+                          }}
+                        />
+                        <div>
+                          <p className="font-semibold text-slate-900 dark:text-white">
                             {item.title}
                           </p>
-                          <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <AppBadge
-                              variant="violet"
-                              className="px-2 py-0.5"
-                              style={{
-                                backgroundColor: t.light,
-                                color: t.text,
-                              }}
-                            >
-                              {formatTypeLabel(item.status)}
-                            </AppBadge>
-                            <AppBadge variant="slate" className="px-2 py-0.5">
-                              {formatTypeLabel(item.workflow_stage)}
-                            </AppBadge>
-                          </div>
+                          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                            {formatTypeLabel(item.contract_type)} · ends{" "}
+                            {formatDate(item.end_date)}
+                          </p>
                         </div>
+                      </div>
 
-                        <div className="flex shrink-0 flex-col items-end gap-2">
-                          <div className="flex items-center gap-1 text-xs text-slate-400">
-                            <span>{formatDate(item.updated_at)}</span>
-                            <ArrowRight className="h-3.5 w-3.5" />
-                          </div>
-                          <button
-                            onClick={() =>
-                              pinned
-                                ? unpinContract(item.id)
-                                : pinContract({
-                                    id: item.id,
-                                    title: item.title,
-                                    status: item.status,
-                                  })
-                            }
-                            className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all"
-                            style={
-                              pinned
-                                ? {
-                                    backgroundColor: t.light,
-                                    color: t.text,
-                                  }
-                                : { color: "#94A3B8" }
-                            }
-                          >
-                            {pinned ? (
-                              <PinOff className="h-3 w-3" />
-                            ) : (
-                              <Pin className="h-3 w-3" />
-                            )}
-                            {pinned ? "Pinned" : "Pin"}
-                          </button>
-                        </div>
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <Badge className="rounded-full bg-slate-900 px-3 py-1 text-white hover:bg-slate-900">
+                          {getDaysLabel(item.days_remaining)}
+                        </Badge>
+                        <button
+                          onClick={() =>
+                            pinned
+                              ? unpinContract(item.id)
+                              : pinContract({ id: item.id, title: item.title })
+                          }
+                          className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all"
+                          style={
+                            pinned
+                              ? { backgroundColor: t.light, color: t.text }
+                              : { color: "#94A3B8" }
+                          }
+                        >
+                          {pinned ? (
+                            <PinOff className="h-3 w-3" />
+                          ) : (
+                            <Pin className="h-3 w-3" />
+                          )}
+                          {pinned ? "Pinned" : "Pin"}
+                        </button>
                       </div>
                     </div>
                   );
                 })}
               </div>
-            </div>
-          </AppCard>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section>
+          <Card className="rounded-3xl border border-slate-200/80 dark:border-white/8 bg-card shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                    Recent activity
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Latest updates. Pin any contract for quick access.
+                  </p>
+                </div>
+                <TrendingUp className="h-5 w-5 text-slate-400" />
+              </div>
+
+              <div className="space-y-4">
+                {!loading && activity.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                    No recent activity found.
+                  </div>
+                ) : null}
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {activity.map((item) => {
+                    const pinned = prefs.pinned_contracts.some(
+                      (p) => p.id === item.id
+                    );
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/4 px-4 py-4 transition-all duration-200 hover:border-slate-300 dark:hover:border-white/15 hover:shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-slate-900 dark:text-white">
+                              {item.title}
+                            </p>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <Badge
+                                className="rounded-full px-2 py-0.5 text-xs"
+                                style={{
+                                  backgroundColor: t.light,
+                                  color: t.text,
+                                }}
+                              >
+                                {formatTypeLabel(item.status)}
+                              </Badge>
+                              <Badge className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-100">
+                                {formatTypeLabel(item.workflow_stage)}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <div className="flex shrink-0 flex-col items-end gap-2">
+                            <div className="flex items-center gap-1 text-xs text-slate-400">
+                              <span>{formatDate(item.updated_at)}</span>
+                              <ArrowRight className="h-3.5 w-3.5" />
+                            </div>
+                            <button
+                              onClick={() =>
+                                pinned
+                                  ? unpinContract(item.id)
+                                  : pinContract({
+                                      id: item.id,
+                                      title: item.title,
+                                      status: item.status,
+                                    })
+                              }
+                              className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all"
+                              style={
+                                pinned
+                                  ? {
+                                      backgroundColor: t.light,
+                                      color: t.text,
+                                    }
+                                  : { color: "#94A3B8" }
+                              }
+                            >
+                              {pinned ? (
+                                <PinOff className="h-3 w-3" />
+                              ) : (
+                                <Pin className="h-3 w-3" />
+                              )}
+                              {pinned ? "Pinned" : "Pin"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </section>
       </div>
     </AppShell>

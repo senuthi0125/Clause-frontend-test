@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/MSI/Desktop/UNI_CLM/**)",
+      "PowerShell(wsl -e bash -c \"cd /home/thevindu/clm_project && docker compose ps 2>&1\")",
+      "PowerShell(wsl -e bash -c \"docker --version && docker compose version\" 2>&1)",
+      "Read(//c/Users/MSI/Desktop/UNI_CLM/Clause-Frontend/**)",
+      "PowerShell(wsl -e bash -c \"ls /home/thevindu/clm_project/injest/secrets/ 2>&1\")",
+      "PowerShell(wsl -e bash -c \"ls /home/thevindu/clm_project/injest/secrets/ 2>&1; echo 'exit:'$?\")"
+    ]
+  }
+}

@@ -9,57 +9,26 @@ import {
   Sparkles,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
-import { AppCard } from "@/components/ui/app-card";
-import { AppBadge } from "@/components/ui/app-badge";
-import { AppEmptyState } from "@/components/ui/app-empty-state";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { formatLabel, formatDate, formatCurrency } from "@/lib/utils";
 import type { Contract } from "@/types/api";
-
-function formatLabel(value?: string | null) {
-  return (value || "-")
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
-    .join(" ");
-}
-
-function formatCurrency(value?: number | null) {
-  if (value == null || Number.isNaN(value)) return "—";
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 function getNumber(value: unknown, fallback = 0) {
   return typeof value === "number" && !Number.isNaN(value) ? value : fallback;
 }
 
-function roleBadgeVariant(
-  role?: string | null
-): "blue" | "slate" | "violet" {
+function roleBadgeClass(role?: string | null) {
   switch ((role || "").toLowerCase()) {
     case "admin":
-      return "blue";
+      return "bg-[#07153A] text-white";
     case "manager":
-      return "violet";
+      return "bg-slate-900 text-white";
     case "viewer":
-      return "slate";
+      return "bg-slate-100 text-slate-700";
     default:
-      return "blue";
+      return "bg-[#07153A] text-white";
   }
 }
 
@@ -155,6 +124,7 @@ export default function AdminOverviewPage() {
       getNumber(adminStats?.contracts_total);
 
     if (fromStats > 0) return fromStats;
+
     if (contracts.length > 0) return contracts.length;
 
     const fromStages = contractsByStage.reduce(
@@ -340,9 +310,7 @@ export default function AdminOverviewPage() {
       icon: FileText,
       iconWrap:
         "bg-gradient-to-br from-indigo-600 to-violet-500 text-white shadow-lg shadow-indigo-500/20",
-      accent: "text-indigo-600 dark:text-indigo-300",
-      tone:
-        "border-violet-100 bg-violet-50 dark:border-violet-500/20 dark:bg-violet-500/10",
+      accent: "text-indigo-600",
     },
     {
       title: "Active Contracts",
@@ -351,9 +319,7 @@ export default function AdminOverviewPage() {
       icon: CheckCircle2,
       iconWrap:
         "bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20",
-      accent: "text-emerald-600 dark:text-emerald-300",
-      tone:
-        "border-emerald-100 bg-emerald-50 dark:border-emerald-500/20 dark:bg-emerald-500/10",
+      accent: "text-emerald-600",
     },
     {
       title: "Pending Approvals",
@@ -362,9 +328,7 @@ export default function AdminOverviewPage() {
       icon: CheckCircle2,
       iconWrap:
         "bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20",
-      accent: "text-amber-600 dark:text-amber-300",
-      tone:
-        "border-amber-100 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/10",
+      accent: "text-amber-600",
     },
     {
       title: "High Risk Items",
@@ -373,9 +337,7 @@ export default function AdminOverviewPage() {
       icon: AlertTriangle,
       iconWrap:
         "bg-gradient-to-br from-rose-500 to-red-500 text-white shadow-lg shadow-rose-500/20",
-      accent: "text-rose-600 dark:text-rose-300",
-      tone:
-        "border-rose-100 bg-rose-50 dark:border-rose-500/20 dark:bg-rose-500/10",
+      accent: "text-rose-600",
     },
   ];
 
@@ -386,7 +348,7 @@ export default function AdminOverviewPage() {
       contractGroups={contractGroups}
     >
       {error && (
-        <div className="mb-6 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
+        <div className="mb-6 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
           {error}
         </div>
       )}
@@ -397,19 +359,19 @@ export default function AdminOverviewPage() {
             const Icon = card.icon;
 
             return (
-              <div
+              <Card
                 key={card.title}
-                className={`overflow-hidden rounded-3xl border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${card.tone}`}
+                className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
               >
-                <div className="p-6">
+                <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-3">
-                      <p className="text-sm font-medium text-slate-500 dark:text-slate-300">
+                      <p className="text-sm font-medium text-slate-500">
                         {card.title}
                       </p>
 
                       <div className="flex items-end gap-2">
-                        <h3 className="text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                        <h3 className="text-4xl font-semibold tracking-tight text-slate-900">
                           {loading ? "..." : card.value}
                         </h3>
                         <span
@@ -419,9 +381,7 @@ export default function AdminOverviewPage() {
                         </span>
                       </div>
 
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {card.helper}
-                      </p>
+                      <p className="text-sm text-slate-500">{card.helper}</p>
                     </div>
 
                     <div
@@ -430,327 +390,353 @@ export default function AdminOverviewPage() {
                       <Icon className="h-5 w-5" />
                     </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             );
           })}
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.05fr_1.35fr]">
-          <AppCard tone="soft">
-            <div className="mb-6">
-              <div className="mb-2 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-indigo-500" />
-                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  System value
-                </span>
-              </div>
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                Contract value
-              </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Financial overview across the full contract repository.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-violet-100 bg-violet-100/55 p-4 dark:border-violet-500/20 dark:bg-violet-500/12">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-slate-600 dark:text-slate-300">
-                    Total value
-                  </span>
-                  <span className="text-2xl font-semibold text-slate-950 dark:text-white">
-                    {loading ? "..." : formatCurrency(contractValueSummary.total)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-violet-100 bg-violet-100/55 p-4 dark:border-violet-500/20 dark:bg-violet-500/12">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-slate-600 dark:text-slate-300">
-                    Average
-                  </span>
-                  <span className="text-2xl font-semibold text-slate-950 dark:text-white">
-                    {loading ? "..." : formatCurrency(contractValueSummary.average)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-violet-100 bg-violet-100/55 p-4 dark:border-violet-500/20 dark:bg-violet-500/12">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-slate-600 dark:text-slate-300">
-                    Largest
-                  </span>
-                  <span className="text-2xl font-semibold text-slate-950 dark:text-white">
-                    {loading ? "..." : formatCurrency(contractValueSummary.largest)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-violet-100 bg-violet-100/55 p-4 dark:border-violet-500/20 dark:bg-violet-500/12">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-slate-600 dark:text-slate-300">
-                    System users
-                  </span>
-                  <span className="text-2xl font-semibold text-slate-950 dark:text-white">
-                    {loading ? "..." : totalUsers}
-                  </span>
-                </div>
-                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                  {loading ? "Loading..." : `${activeUsers} active accounts`}
-                </p>
-              </div>
-            </div>
-          </AppCard>
-
-          <AppCard tone="soft">
-            <div className="mb-6 flex items-start justify-between gap-4">
-              <div>
+          <Card className="rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-6">
                 <div className="mb-2 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-indigo-500" />
+                  <TrendingUp className="h-4 w-4 text-indigo-500" />
                   <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    Status snapshot
+                    System value
                   </span>
                 </div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                  Contracts by workflow stage
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                  Contract value
                 </h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Real-time workflow distribution across the system.
+                <p className="mt-1 text-sm text-slate-500">
+                  Financial overview across the full contract repository.
                 </p>
               </div>
 
-              {largestStage ? (
-                <div className="rounded-2xl border border-violet-100 bg-violet-100/70 px-4 py-3 text-right dark:border-violet-500/20 dark:bg-violet-500/15">
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    Largest segment
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
-                    {largestStage.label}
-                  </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {largestStage.count} contracts
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-slate-600">Total value</span>
+                    <span className="text-2xl font-semibold text-slate-950">
+                      {loading ? "..." : formatCurrency(contractValueSummary.total)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-slate-600">Average</span>
+                    <span className="text-2xl font-semibold text-slate-950">
+                      {loading ? "..." : formatCurrency(contractValueSummary.average)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-slate-600">Largest</span>
+                    <span className="text-2xl font-semibold text-slate-950">
+                      {loading ? "..." : formatCurrency(contractValueSummary.largest)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-slate-600">System users</span>
+                    <span className="text-2xl font-semibold text-slate-950">
+                      {loading ? "..." : totalUsers}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500">
+                    {loading ? "Loading..." : `${activeUsers} active accounts`}
                   </p>
                 </div>
-              ) : null}
-            </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="space-y-4">
+          <Card className="rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-indigo-500" />
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                      Status snapshot
+                    </span>
+                  </div>
+                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                    Contracts by workflow stage
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Real-time workflow distribution across the system.
+                  </p>
+                </div>
+
+                {largestStage ? (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                      Largest segment
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      {largestStage.label}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {largestStage.count} contracts
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="space-y-4">
+                {loading ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                    Loading workflow stages...
+                  </div>
+                ) : normalizedStages.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                    No workflow data found.
+                  </div>
+                ) : (
+                  normalizedStages.map((stage) => {
+                    const max = largestStage?.count || 1;
+                    const width = `${(stage.count / max) * 100}%`;
+
+                    return (
+                      <div
+                        key={stage.label}
+                        className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4"
+                      >
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div>
+                            <p className="font-medium text-slate-900">
+                              {stage.label}
+                            </p>
+                          </div>
+
+                          <Badge className="rounded-full bg-slate-900 px-3 py-1 text-white hover:bg-slate-900">
+                            {stage.count}
+                          </Badge>
+                        </div>
+
+                        <div className="h-2.5 overflow-hidden rounded-full bg-slate-200">
+                          <div
+                            className="h-full rounded-full bg-[#07153A]"
+                            style={{ width }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          <Card className="rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-6">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                  Value by contract type
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Contract volume and value distribution by type.
+                </p>
+              </div>
+
               {loading ? (
-                <AppEmptyState title="Loading workflow stages..." />
-              ) : normalizedStages.length === 0 ? (
-                <AppEmptyState title="No workflow data found." />
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  Loading values...
+                </div>
+              ) : normalizedValueByType.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  No value data found.
+                </div>
               ) : (
-                normalizedStages.map((stage) => {
-                  const max = largestStage?.count || 1;
-                  const width = `${(stage.count / max) * 100}%`;
-
-                  return (
+                <div className="space-y-3">
+                  {normalizedValueByType.map((item) => (
                     <div
-                      key={stage.label}
-                      className="rounded-2xl border border-violet-100 bg-violet-100/55 p-4 dark:border-violet-500/20 dark:bg-violet-500/12"
+                      key={item.type}
+                      className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4"
                     >
-                      <div className="mb-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center justify-between gap-4">
                         <div>
-                          <p className="font-medium text-slate-900 dark:text-white">
-                            {stage.label}
+                          <p className="text-base font-medium text-slate-950">
+                            {item.type}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {item.count} contract{item.count === 1 ? "" : "s"}
+                          </p>
+                        </div>
+                        <p className="text-lg font-semibold text-slate-950">
+                          {formatCurrency(item.totalValue)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-6">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                  Approvals breakdown
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Current approval distribution across the full system.
+                </p>
+              </div>
+
+              {loading ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  Loading approvals...
+                </div>
+              ) : normalizedApprovals.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  No approval data found.
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  {normalizedApprovals.map((item) => {
+                    const max = Math.max(
+                      ...normalizedApprovals.map((x) => x.count),
+                      1
+                    );
+                    const width = `${(item.count / max) * 100}%`;
+
+                    return (
+                      <div key={item.label}>
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                          <span className="text-sm text-slate-700">
+                            {item.label}
+                          </span>
+                          <span className="text-lg font-semibold text-slate-950">
+                            {item.count}
+                          </span>
+                        </div>
+
+                        <div className="h-3 rounded-full bg-slate-200">
+                          <div
+                            className="h-3 rounded-full bg-[#07153A]"
+                            style={{ width }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          <Card className="rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-6 flex items-center gap-2">
+                <Shield className="h-4 w-4 text-slate-700" />
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                  Recent users
+                </h2>
+              </div>
+
+              {loading ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  Loading users...
+                </div>
+              ) : recentUsers.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  No recent users found.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentUsers.map((user, index) => (
+                    <div
+                      key={user.id || index}
+                      className="rounded-2xl border border-slate-200 bg-white px-4 py-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-base font-medium text-slate-950">
+                            {user.full_name || user.name || "Unnamed user"}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {user.email || "No email"}
                           </p>
                         </div>
 
-                        <AppBadge variant="dark">{stage.count}</AppBadge>
-                      </div>
-
-                      <div className="h-2.5 overflow-hidden rounded-full bg-slate-200 dark:bg-white/15">
-                        <div
-                          className="h-full rounded-full bg-[#07153A] dark:bg-violet-400"
-                          style={{ width }}
-                        />
+                        <div className="text-right">
+                          <Badge className={roleBadgeClass(user.role)}>
+                            {formatLabel(user.role || "user")}
+                          </Badge>
+                          <p className="mt-2 text-xs text-slate-500">
+                            {formatDate(user.created_at || user.joined_at)}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  );
-                })
+                  ))}
+                </div>
               )}
-            </div>
-          </AppCard>
-        </section>
+            </CardContent>
+          </Card>
 
-        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          <AppCard tone="soft">
-            <div className="mb-6">
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                Value by contract type
-              </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Contract volume and value distribution by type.
-              </p>
-            </div>
-
-            {loading ? (
-              <AppEmptyState title="Loading values..." />
-            ) : normalizedValueByType.length === 0 ? (
-              <AppEmptyState title="No value data found." />
-            ) : (
-              <div className="space-y-3">
-                {normalizedValueByType.map((item) => (
-                  <div
-                    key={item.type}
-                    className="rounded-2xl border border-violet-100 bg-violet-100/55 px-4 py-4 dark:border-violet-500/20 dark:bg-violet-500/12"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-base font-medium text-slate-950 dark:text-white">
-                          {item.type}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {item.count} contract{item.count === 1 ? "" : "s"}
-                        </p>
-                      </div>
-                      <p className="text-lg font-semibold text-slate-950 dark:text-white">
-                        {formatCurrency(item.totalValue)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+          <Card className="rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-6 flex items-center gap-2">
+                <Activity className="h-4 w-4 text-slate-700" />
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                  Recent system activity
+                </h2>
               </div>
-            )}
-          </AppCard>
 
-          <AppCard tone="soft">
-            <div className="mb-6">
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                Approvals breakdown
-              </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Current approval distribution across the full system.
-              </p>
-            </div>
+              {loading ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  Loading activity...
+                </div>
+              ) : userActivity.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  No recent activity found.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {userActivity.map((item, index) => (
+                    <div
+                      key={item.id || index}
+                      className="rounded-2xl border border-slate-200 bg-white px-4 py-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-base font-medium text-slate-950">
+                            {item.title ||
+                              `${formatLabel(item.action)} · ${formatLabel(
+                                item.resource_type
+                              )}`}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {item.description ||
+                              item.message ||
+                              `${item.user_email || "User"} — activity recorded.`}
+                          </p>
+                        </div>
 
-            {loading ? (
-              <AppEmptyState title="Loading approvals..." />
-            ) : normalizedApprovals.length === 0 ? (
-              <AppEmptyState title="No approval data found." />
-            ) : (
-              <div className="space-y-5">
-                {normalizedApprovals.map((item) => {
-                  const max = Math.max(
-                    ...normalizedApprovals.map((x) => x.count),
-                    1
-                  );
-                  const width = `${(item.count / max) * 100}%`;
-
-                  return (
-                    <div key={item.label}>
-                      <div className="mb-2 flex items-center justify-between gap-3">
-                        <span className="text-sm text-slate-700 dark:text-slate-300">
-                          {item.label}
-                        </span>
-                        <span className="text-lg font-semibold text-slate-950 dark:text-white">
-                          {item.count}
-                        </span>
-                      </div>
-
-                      <div className="h-3 rounded-full bg-slate-200 dark:bg-white/15">
-                        <div
-                          className="h-3 rounded-full bg-[#07153A] dark:bg-violet-400"
-                          style={{ width }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </AppCard>
-        </section>
-
-        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          <AppCard tone="soft">
-            <div className="mb-6 flex items-center gap-2">
-              <Shield className="h-4 w-4 text-slate-700 dark:text-slate-300" />
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                Recent users
-              </h2>
-            </div>
-
-            {loading ? (
-              <AppEmptyState title="Loading users..." />
-            ) : recentUsers.length === 0 ? (
-              <AppEmptyState title="No recent users found." />
-            ) : (
-              <div className="space-y-4">
-                {recentUsers.map((user, index) => (
-                  <div
-                    key={user.id || index}
-                    className="rounded-2xl border border-violet-100 bg-white px-4 py-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm dark:border-violet-500/20 dark:bg-white/5 dark:hover:border-white/15"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-base font-medium text-slate-950 dark:text-white">
-                          {user.full_name || user.name || "Unnamed user"}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                          {user.email || "No email"}
-                        </p>
-                      </div>
-
-                      <div className="text-right">
-                        <AppBadge variant={roleBadgeVariant(user.role)}>
-                          {formatLabel(user.role || "user")}
-                        </AppBadge>
-                        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                          {formatDate(user.created_at || user.joined_at)}
+                        <p className="text-xs text-slate-500">
+                          {formatDate(item.created_at || item.timestamp)}
                         </p>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </AppCard>
-
-          <AppCard tone="soft">
-            <div className="mb-6 flex items-center gap-2">
-              <Activity className="h-4 w-4 text-slate-700 dark:text-slate-300" />
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                Recent system activity
-              </h2>
-            </div>
-
-            {loading ? (
-              <AppEmptyState title="Loading activity..." />
-            ) : userActivity.length === 0 ? (
-              <AppEmptyState title="No recent activity found." />
-            ) : (
-              <div className="space-y-4">
-                {userActivity.map((item, index) => (
-                  <div
-                    key={item.id || index}
-                    className="rounded-2xl border border-violet-100 bg-white px-4 py-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm dark:border-violet-500/20 dark:bg-white/5 dark:hover:border-white/15"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-base font-medium text-slate-950 dark:text-white">
-                          {item.title ||
-                            `${formatLabel(item.action)} · ${formatLabel(
-                              item.resource_type
-                            )}`}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                          {item.description ||
-                            item.message ||
-                            `${item.user_email || "User"} — activity recorded.`}
-                        </p>
-                      </div>
-
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {formatDate(item.created_at || item.timestamp)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </AppCard>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </section>
       </div>
     </AppShell>

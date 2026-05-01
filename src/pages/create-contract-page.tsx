@@ -7,6 +7,7 @@ import { AppCard } from "@/components/ui/app-card";
 import { AppInput } from "@/components/ui/app-input";
 import { AppBadge } from "@/components/ui/app-badge";
 import { api } from "@/lib/api";
+import { formatLabel } from "@/lib/utils";
 import type { ContractParty, Template } from "@/types/api";
 
 type FormState = {
@@ -43,23 +44,6 @@ function blankParty(): ContractParty {
     organization: "",
   };
 }
-
-function formatLabel(value: string) {
-  return value
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
-    .join(" ");
-}
-
-const inputLabel =
-  "space-y-2 text-sm font-medium text-slate-700 dark:text-slate-300";
-
-const selectClass =
-  "h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition-all focus:border-violet-400 focus:ring-2 focus:ring-violet-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:border-violet-400 dark:focus:ring-violet-500/10";
-
-const textareaClass =
-  "min-h-28 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-all focus:border-violet-400 focus:ring-2 focus:ring-violet-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-violet-400 dark:focus:ring-violet-500/10";
 
 export default function CreateContractPage() {
   const navigate = useNavigate();

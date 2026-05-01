@@ -8,34 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { formatLabel, statusBadgeClass as badgeClass } from "@/lib/utils";
 import type { ApprovalListResponse, Contract, Workflow } from "@/types/api";
 
 type ApprovalItem =
   ApprovalListResponse["approvals"] extends Array<infer T> ? T : never;
-
-function formatLabel(value?: string | null) {
-  return (value || "-")
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
-    .join(" ");
-}
-
-function badgeClass(value?: string | null) {
-  switch ((value || "").toLowerCase()) {
-    case "completed":
-    case "approved":
-      return "bg-green-100 text-green-700";
-    case "rejected":
-    case "cancelled":
-      return "bg-red-100 text-red-700";
-    case "in_progress":
-    case "active":
-      return "bg-blue-100 text-blue-700";
-    default:
-      return "bg-slate-100 text-slate-700";
-  }
-}
 
 export default function WorkflowDetailPage() {
   const { id } = useParams();

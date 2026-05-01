@@ -4,6 +4,7 @@ import {
   SignUp,
   SignedIn,
   SignedOut,
+  RedirectToSignIn,
 } from "@clerk/clerk-react";
 import LandingPage from "./pages/landing-page";
 import DashboardPage from "./pages/dashboard-page";
@@ -13,17 +14,16 @@ import ContractTemplatePage from "./pages/contract-template-page";
 import CreateContractPage from "./pages/create-contract-page";
 import ContractDetailsPage from "./pages/contract-details-page";
 import ConflictDetectionPage from "./pages/conflict-detection-page";
-import AIAnalysisPage from "./pages/ai-analysis-page";
 import RiskAnalysisPage from "./pages/risk-analysis-page";
 import AdminOverviewPage from "./pages/admin-overview-page";
 import AdminUsersPage from "./pages/admin-users-page";
 import AdminAuditPage from "./pages/admin-audit-page";
 import AdminApprovalsPage from "./pages/admin-approvals-page";
 import AdminNotificationsPage from "./pages/admin-notifications-page";
+import ReportsPage from "./pages/reports-page";
 import WorkflowsPage from "./pages/workflows-page";
 import WorkflowDetailPage from "./pages/workflow-detail-page";
 import WorkflowTemplatesPage from "./pages/workflow-templates-page";
-import UploadPipelinePage from "./pages/upload-pipeline-page";
 import SettingsPage from "./pages/settings-page";
 import { AuthBridge } from "./components/auth-bridge";
 import { ThemeProvider } from "./components/theme-provider";
@@ -53,7 +53,6 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
         {/* Thin top border accent */}
         <div className="absolute left-0 top-0 h-px w-full bg-gradient-to-r from-transparent via-slate-500/40 to-transparent" />
 
-        {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/8">
             <span className="text-base font-bold tracking-tight text-white">C</span>
@@ -127,15 +126,13 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Right form panel */}
-      <div className="flex flex-1 flex-col items-center justify-center bg-slate-50 px-6 py-12">
-        {/* Mobile logo */}
+      <div className="flex flex-1 flex-col items-center justify-center bg-white px-6 py-12">
         <div className="mb-8 flex items-center gap-2 lg:hidden">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900">
             <span className="text-base font-bold text-white">C</span>
           </div>
           <span className="text-lg font-semibold text-slate-800">Clause</span>
         </div>
-
         {children}
       </div>
     </div>
@@ -147,6 +144,8 @@ export default function App() {
     <ThemeProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
+
           <Route
             path="/sign-in/*"
             element={
@@ -184,11 +183,9 @@ export default function App() {
                   <Routes>
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/contracts" element={<ContractsPage />} />
-                    <Route path="/upload" element={<UploadPipelinePage />} />
                     <Route path="/contracts/new" element={<ContractTemplatePage />} />
                     <Route path="/contracts/create" element={<CreateContractPage />} />
                     <Route path="/contracts/:id" element={<ContractDetailsPage />} />
-                    <Route path="/ai-analysis" element={<AIAnalysisPage />} />
                     <Route path="/conflict-detection" element={<ConflictDetectionPage />} />
                     <Route path="/calendar" element={<CalendarPage />} />
                     <Route path="/risk-analysis" element={<RiskAnalysisPage />} />
@@ -199,6 +196,7 @@ export default function App() {
                     <Route path="/admin/approvals" element={<AdminApprovalsPage />} />
                     <Route path="/admin/audit" element={<AdminAuditPage />} />
                     <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
+                    <Route path="/admin/reports" element={<ReportsPage />} />
                     <Route path="/admin/workflows" element={<WorkflowsPage />} />
                     <Route path="/admin/workflows/:id" element={<WorkflowDetailPage />} />
                     <Route path="/admin/workflow-templates" element={<WorkflowTemplatesPage />} />
@@ -209,10 +207,7 @@ export default function App() {
                 </SignedIn>
 
                 <SignedOut>
-                  <Routes>
-                    <Route path="/" element={<LandingPage />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
+                  <RedirectToSignIn />
                 </SignedOut>
               </>
             }

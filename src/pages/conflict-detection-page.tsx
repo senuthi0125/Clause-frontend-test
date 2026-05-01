@@ -13,47 +13,26 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
-import { AppBadge } from "@/components/ui/app-badge";
-import { AppInput } from "@/components/ui/app-input";
-import { AppCard } from "@/components/ui/app-card";
-import { AppEmptyState } from "@/components/ui/app-empty-state";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { formatLabel as fmt } from "@/lib/utils";
 import type { ConflictResult, Contract } from "@/types/api";
-
-function fmt(value?: string | null) {
-  return (value || "—")
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p))
-    .join(" ");
-}
 
 function severityColors(v?: string | null) {
   switch ((v || "").toLowerCase()) {
     case "high":
     case "critical":
-      return {
-        badge: "rose" as const,
-        border: "border-red-200 dark:border-red-500/20",
-        bg: "bg-red-50 dark:bg-red-500/10",
-        icon: "text-red-600 dark:text-red-300",
-      };
+      return { badge: "bg-red-100 text-red-700", border: "border-red-200", bg: "bg-red-50" };
     case "medium":
-      return {
-        badge: "amber" as const,
-        border: "border-amber-200 dark:border-amber-500/20",
-        bg: "bg-amber-50 dark:bg-amber-500/10",
-        icon: "text-amber-600 dark:text-amber-300",
-      };
+      return { badge: "bg-amber-100 text-amber-700", border: "border-amber-200", bg: "bg-amber-50" };
     default:
-      return {
-        badge: "emerald" as const,
-        border: "border-green-200 dark:border-green-500/20",
-        bg: "bg-green-50 dark:bg-green-500/10",
-        icon: "text-green-600 dark:text-green-300",
-      };
+      return { badge: "bg-green-100 text-green-700", border: "border-green-200", bg: "bg-green-50" };
   }
 }
+
+// ─── Contract selector pill ──────────────────────────────────────────────────
 
 function ContractPill({
   contract,
@@ -70,44 +49,35 @@ function ContractPill({
       onClick={onToggle}
       className={`group flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-left transition-all ${
         checked
-          ? "border-blue-500 bg-blue-50 shadow-sm dark:border-blue-400 dark:bg-blue-500/10"
-          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-white/10 dark:bg-[#131829] dark:hover:border-white/15 dark:hover:bg-white/5"
+          ? "border-blue-500 bg-blue-50 shadow-sm"
+          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
       }`}
     >
+      {/* Checkbox circle */}
       <div
         className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
           checked
             ? "border-blue-500 bg-blue-500"
-            : "border-slate-300 group-hover:border-slate-400 dark:border-white/20 dark:group-hover:border-white/30"
+            : "border-slate-300 group-hover:border-slate-400"
         }`}
       >
-        {checked && (
-          <CheckCircle2 className="h-3.5 w-3.5 text-white" strokeWidth={3} />
-        )}
+        {checked && <CheckCircle2 className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
       </div>
 
       <div className="min-w-0 flex-1">
-        <p
-          className={`truncate text-sm font-medium ${
-            checked
-              ? "text-blue-900 dark:text-blue-200"
-              : "text-slate-800 dark:text-white"
-          }`}
-        >
+        <p className={`truncate text-sm font-medium ${checked ? "text-blue-900" : "text-slate-800"}`}>
           {contract.title}
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            {fmt(contract.contract_type)}
-          </span>
-          <span className="text-xs text-slate-300 dark:text-slate-600">·</span>
+          <span className="text-xs text-slate-500">{fmt(contract.contract_type)}</span>
+          <span className="text-xs text-slate-300">·</span>
           <span
             className={`text-xs font-medium ${
               contract.status === "active"
-                ? "text-green-600 dark:text-green-300"
+                ? "text-green-600"
                 : contract.status === "draft"
-                ? "text-slate-400 dark:text-slate-500"
-                : "text-amber-600 dark:text-amber-300"
+                ? "text-slate-400"
+                : "text-amber-600"
             }`}
           >
             {fmt(contract.status)}
@@ -118,6 +88,8 @@ function ContractPill({
   );
 }
 
+// ─── Conflict card ───────────────────────────────────────────────────────────
+
 type ConflictItem = ConflictResult["conflicts"][number];
 
 function ConflictCard({ conflict }: { conflict: ConflictItem }) {
@@ -125,75 +97,67 @@ function ConflictCard({ conflict }: { conflict: ConflictItem }) {
   const colors = severityColors(conflict.severity);
 
   return (
-    <div className={`overflow-hidden rounded-2xl border ${colors.border}`}>
+    <div className={`rounded-2xl border ${colors.border} overflow-hidden`}>
+      {/* Header row */}
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
         className={`flex w-full items-start justify-between gap-3 px-5 py-4 text-left ${colors.bg} transition-colors hover:brightness-95`}
       >
         <div className="flex items-start gap-3">
-          <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${colors.icon}`} />
+          <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${
+            conflict.severity === "high" || conflict.severity === "critical"
+              ? "text-red-600"
+              : conflict.severity === "medium"
+              ? "text-amber-600"
+              : "text-green-600"
+          }`} />
           <div>
-            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+            <p className="text-sm font-semibold text-slate-900">
               {conflict.contract_a}{" "}
-              <span className="font-normal text-slate-500 dark:text-slate-400">
-                vs
-              </span>{" "}
+              <span className="font-normal text-slate-500">vs</span>{" "}
               {conflict.contract_b}
             </p>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-0.5 text-xs text-slate-500">
               {fmt(conflict.conflict_type)}
             </p>
           </div>
         </div>
-
         <div className="flex shrink-0 items-center gap-2">
-          <AppBadge variant={colors.badge}>{fmt(conflict.severity)}</AppBadge>
-          {expanded ? (
-            <ChevronUp className="h-4 w-4 text-slate-400" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-slate-400" />
-          )}
+          <Badge className={colors.badge}>{fmt(conflict.severity)}</Badge>
+          {expanded
+            ? <ChevronUp className="h-4 w-4 text-slate-400" />
+            : <ChevronDown className="h-4 w-4 text-slate-400" />}
         </div>
       </button>
 
+      {/* Expanded body */}
       {expanded && (
-        <div className="space-y-4 bg-white px-5 py-4 dark:bg-[#131829]">
-          <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+        <div className="space-y-4 px-5 py-4 bg-white">
+          <p className="text-sm text-slate-700 leading-relaxed">
             {conflict.description}
           </p>
 
           <div className="grid gap-3 md:grid-cols-2">
-            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-white/8 dark:bg-white/5">
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
               <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                 Clause — {conflict.contract_a}
               </p>
-              <p className="text-sm text-slate-700 dark:text-slate-300">
-                {conflict.clause_a}
-              </p>
+              <p className="text-sm text-slate-700">{conflict.clause_a}</p>
             </div>
-
-            <div
-              className={`rounded-xl border p-3 ${colors.border} ${colors.bg}`}
-            >
+            <div className={`rounded-xl border p-3 ${colors.border} ${colors.bg}`}>
               <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                 Clause — {conflict.contract_b}
               </p>
-              <p className="text-sm text-slate-700 dark:text-slate-300">
-                {conflict.clause_b}
-              </p>
+              <p className="text-sm text-slate-700">{conflict.clause_b}</p>
             </div>
           </div>
 
-          <div className="flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 dark:border-blue-500/20 dark:bg-blue-500/10">
+          <div className="flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
             <div>
-              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-                Recommendation
-              </p>
-              <p className="mt-0.5 text-sm text-blue-800 dark:text-blue-200">
-                {conflict.recommendation}
-              </p>
+              <p className="text-xs font-semibold text-blue-700">Recommendation</p>
+              <p className="mt-0.5 text-sm text-blue-800">{conflict.recommendation}</p>
             </div>
           </div>
         </div>
@@ -202,14 +166,16 @@ function ConflictCard({ conflict }: { conflict: ConflictItem }) {
   );
 }
 
+// ─── Main page ───────────────────────────────────────────────────────────────
+
 export default function ConflictDetectionPage() {
-  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [contracts, setContracts]     = useState<Contract[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [search, setSearch] = useState("");
-  const [result, setResult] = useState<ConflictResult | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch]           = useState("");
+  const [result, setResult]           = useState<ConflictResult | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [analyzing, setAnalyzing]     = useState(false);
+  const [error, setError]             = useState<string | null>(null);
 
   useEffect(() => {
     api
@@ -231,13 +197,8 @@ export default function ConflictDetectionPage() {
 
   const contractGroups = useMemo(() => {
     const counts = new Map<string, number>();
-    contracts.forEach((c) =>
-      counts.set(c.contract_type, (counts.get(c.contract_type) || 0) + 1)
-    );
-    return Array.from(counts.entries()).map(([name, count]) => ({
-      name: fmt(name),
-      count,
-    }));
+    contracts.forEach((c) => counts.set(c.contract_type, (counts.get(c.contract_type) || 0) + 1));
+    return Array.from(counts.entries()).map(([name, count]) => ({ name: fmt(name), count }));
   }, [contracts]);
 
   function toggle(id: string) {
@@ -270,170 +231,164 @@ export default function ConflictDetectionPage() {
       contractGroups={contractGroups}
     >
       {error && (
-        <div className="mb-5 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
+        <div className="mb-5 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           <XCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
       )}
 
       <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
-        <AppCard tone="soft">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                Your contracts
+
+        {/* ── LEFT — contract picker ────────────────────────────────────── */}
+        <div className="flex flex-col gap-4">
+          {/* Selection count pill */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-700">
+              Your contracts
+            </span>
+            {selectedIds.length > 0 && (
+              <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                {selectedIds.length} selected
               </span>
-              {selectedIds.length > 0 && (
-                <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
-                  {selectedIds.length} selected
-                </span>
-              )}
-            </div>
-
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <AppInput
-                placeholder="Search contracts…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-10 rounded-xl pl-9"
-              />
-            </div>
-
-            <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 420 }}>
-              {loading && (
-                <div className="flex items-center justify-center gap-2 py-6 text-sm text-slate-500 dark:text-slate-400">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading contracts…
-                </div>
-              )}
-
-              {!loading && filtered.length === 0 && (
-                <AppEmptyState
-                  title="No contracts found"
-                  description="Try adjusting your search to find contracts by title or type."
-                  icon={<FileText className="h-6 w-6 text-slate-300" />}
-                  className="py-10"
-                />
-              )}
-
-              {filtered.map((c) => (
-                <ContractPill
-                  key={c.id}
-                  contract={c}
-                  checked={selectedIds.includes(c.id)}
-                  onToggle={() => toggle(c.id)}
-                />
-              ))}
-            </div>
-
-            <Button
-              onClick={analyze}
-              disabled={selectedIds.length < 2 || analyzing}
-              className="h-11 w-full rounded-xl"
-            >
-              {analyzing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analysing…
-                </>
-              ) : selectedIds.length < 2 ? (
-                `Select at least 2 contracts (${selectedIds.length}/2)`
-              ) : (
-                `Scan ${selectedIds.length} contracts for conflicts`
-              )}
-            </Button>
-
-            {selectedIds.length >= 2 && !analyzing && (
-              <p className="text-center text-xs text-slate-400 dark:text-slate-500">
-                We'll compare all selected contracts against each other
-              </p>
             )}
           </div>
-        </AppCard>
 
+          {/* Search */}
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Search contracts…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-10 rounded-xl pl-9"
+            />
+          </div>
+
+          {/* Contract list */}
+          <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 420 }}>
+            {loading && (
+              <div className="flex items-center gap-2 py-6 justify-center text-sm text-slate-500">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading contracts…
+              </div>
+            )}
+
+            {!loading && filtered.length === 0 && (
+              <div className="flex flex-col items-center gap-2 py-10 text-center">
+                <FileText className="h-8 w-8 text-slate-300" />
+                <p className="text-sm text-slate-500">No contracts found</p>
+              </div>
+            )}
+
+            {filtered.map((c) => (
+              <ContractPill
+                key={c.id}
+                contract={c}
+                checked={selectedIds.includes(c.id)}
+                onToggle={() => toggle(c.id)}
+              />
+            ))}
+          </div>
+
+          {/* Analyse button */}
+          <Button
+            onClick={analyze}
+            disabled={selectedIds.length < 2 || analyzing}
+            className="h-11 w-full rounded-xl"
+          >
+            {analyzing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analysing…
+              </>
+            ) : selectedIds.length < 2 ? (
+              `Select at least 2 contracts (${selectedIds.length}/2)`
+            ) : (
+              `Scan ${selectedIds.length} contracts for conflicts`
+            )}
+          </Button>
+
+          {selectedIds.length >= 2 && !analyzing && (
+            <p className="text-center text-xs text-slate-400">
+              We'll compare all selected contracts against each other
+            </p>
+          )}
+        </div>
+
+        {/* ── RIGHT — results ──────────────────────────────────────────── */}
         <div>
+          {/* Idle state */}
           {!result && !analyzing && (
-            <AppCard tone="default">
-              <div className="flex h-full flex-col items-center justify-center gap-4 py-20 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-white/10">
-                  <ShieldAlert className="h-8 w-8 text-slate-400" />
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-700 dark:text-slate-200">
-                    No analysis run yet
-                  </p>
-                  <p className="mt-1 max-w-xs text-sm text-slate-400 dark:text-slate-500">
-                    Select two or more contracts on the left and click "Scan for
-                    conflicts"
-                  </p>
-                </div>
+            <div className="flex h-full flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-slate-200 bg-white py-20 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
+                <ShieldAlert className="h-8 w-8 text-slate-400" />
               </div>
-            </AppCard>
+              <div>
+                <p className="font-semibold text-slate-700">No analysis run yet</p>
+                <p className="mt-1 max-w-xs text-sm text-slate-400">
+                  Select two or more contracts on the left and click "Scan for conflicts"
+                </p>
+              </div>
+            </div>
           )}
 
+          {/* Loading state */}
           {analyzing && (
-            <AppCard tone="soft">
-              <div className="flex h-full flex-col items-center justify-center gap-4 py-20 text-center">
-                <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-                <div>
-                  <p className="font-semibold text-slate-700 dark:text-slate-200">
-                    Running conflict analysis…
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Our AI is reviewing all {selectedIds.length} contracts
-                  </p>
-                </div>
+            <div className="flex h-full flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-blue-200 bg-blue-50 py-20 text-center">
+              <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+              <div>
+                <p className="font-semibold text-slate-700">Running conflict analysis…</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Our AI is reviewing all {selectedIds.length} contracts
+                </p>
               </div>
-            </AppCard>
+            </div>
           )}
 
+          {/* Results */}
           {result && !analyzing && (
             <div className="space-y-5">
-              <div
-                className={`flex items-start gap-4 rounded-2xl border p-5 ${colors.border} ${colors.bg}`}
-              >
+
+              {/* Summary banner */}
+              <div className={`flex items-start gap-4 rounded-2xl border p-5 ${colors.border} ${colors.bg}`}>
                 {hasConflicts ? (
-                  <AlertTriangle className={`mt-0.5 h-6 w-6 shrink-0 ${colors.icon}`} />
+                  <AlertTriangle className="mt-0.5 h-6 w-6 shrink-0 text-amber-600" />
                 ) : (
-                  <ShieldCheck className={`mt-0.5 h-6 w-6 shrink-0 ${colors.icon}`} />
+                  <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-green-600" />
                 )}
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="font-semibold text-slate-900 dark:text-white">
+                    <p className="font-semibold text-slate-900">
                       {hasConflicts
-                        ? `${result.total_conflicts} conflict${
-                            result.total_conflicts !== 1 ? "s" : ""
-                          } detected`
+                        ? `${result.total_conflicts} conflict${result.total_conflicts !== 1 ? "s" : ""} detected`
                         : "No conflicts detected"}
                     </p>
-                    <AppBadge variant={colors.badge}>
+                    <Badge className={colors.badge}>
                       {fmt(result.overall_risk)} risk
-                    </AppBadge>
+                    </Badge>
                   </div>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                  <p className="mt-1 text-sm text-slate-600 leading-relaxed">
                     {result.summary}
                   </p>
                 </div>
               </div>
 
+              {/* No conflicts hero */}
               {!hasConflicts && (
-                <AppCard tone="default">
-                  <div className="flex flex-col items-center gap-3 py-12 text-center">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/15">
-                      <ShieldCheck className="h-8 w-8 text-green-600 dark:text-green-300" />
+                <Card className="border border-green-100">
+                  <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                      <ShieldCheck className="h-8 w-8 text-green-600" />
                     </div>
-                    <p className="text-lg font-bold text-slate-900 dark:text-white">
-                      All Clear!
+                    <p className="text-lg font-bold text-slate-900">All Clear!</p>
+                    <p className="max-w-sm text-sm text-slate-500">
+                      The selected contracts have no conflicting clauses. They are fully
+                      compatible with each other.
                     </p>
-                    <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
-                      The selected contracts have no conflicting clauses. They are
-                      fully compatible with each other.
-                    </p>
-                  </div>
-                </AppCard>
+                  </CardContent>
+                </Card>
               )}
 
+              {/* Conflict cards */}
               {hasConflicts && (
                 <div className="space-y-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -445,10 +400,10 @@ export default function ConflictDetectionPage() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white px-5 py-3 dark:border-white/8 dark:bg-[#131829]">
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Compared{" "}
-                  {result.conflicts.length > 0
+              {/* Re-run nudge */}
+              <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white px-5 py-3">
+                <p className="text-sm text-slate-500">
+                  Compared {result.conflicts.length > 0
                     ? `${selectedIds.length} contracts`
                     : `all ${selectedIds.length} selected contracts`}
                 </p>
@@ -456,10 +411,7 @@ export default function ConflictDetectionPage() {
                   variant="outline"
                   size="sm"
                   className="rounded-xl"
-                  onClick={() => {
-                    setResult(null);
-                    setSelectedIds([]);
-                  }}
+                  onClick={() => { setResult(null); setSelectedIds([]); }}
                 >
                   Start new scan
                 </Button>

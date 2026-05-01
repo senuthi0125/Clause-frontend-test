@@ -1,6 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { ChatPopup } from "@/components/chat-popup";
 import {
+  BarChart2,
   Bell,
   CalendarDays,
   CheckCheck,
@@ -11,13 +13,11 @@ import {
   Moon,
   Shield,
   ShieldAlert,
-  Sparkles,
   Sun,
   Users,
   ScrollText,
   LockKeyhole,
   Workflow,
-  UploadCloud,
   Settings,
   X,
 } from "lucide-react";
@@ -103,9 +103,7 @@ export function AppShell({
   const mainNavigation = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Contracts", href: "/contracts", icon: FileText },
-    { label: "Upload Contract", href: "/upload", icon: UploadCloud },
-    { label: "AI Analysis", href: "/ai-analysis", icon: Sparkles },
-    { label: "Conflict Detection", href: "/conflict-detection", icon: Shield },
+{ label: "Conflict Detection", href: "/conflict-detection", icon: Shield },
     { label: "Calendar", href: "/calendar", icon: CalendarDays },
     { label: "Risk Analysis", href: "/risk-analysis", icon: ShieldAlert },
     { label: "Settings", href: "/settings", icon: Settings },
@@ -119,11 +117,13 @@ export function AppShell({
     { label: "Approvals", href: "/admin/approvals", icon: CheckCheck },
     { label: "Audit Logs", href: "/admin/audit", icon: ScrollText },
     { label: "Notifications & Alerts", href: "/admin/notifications", icon: Bell },
+    { label: "Reports", href: "/admin/reports", icon: BarChart2 },
   ];
 
   const managerNavigation = [
     { label: "Workflows", href: "/admin/workflows", icon: Workflow },
     { label: "Approvals", href: "/admin/approvals", icon: CheckCheck },
+    { label: "Reports", href: "/admin/reports", icon: BarChart2 },
   ];
 
   const showAdminSection = isAdminOrManager && adminMode;
@@ -444,6 +444,8 @@ export function AppShell({
           </main>
         </div>
       </div>
+
+      <ChatPopup />
     </div>
   );
 }

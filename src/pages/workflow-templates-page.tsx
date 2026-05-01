@@ -16,6 +16,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { formatLabel as fmt } from "@/lib/utils";
 import type { WorkflowTemplate, WorkflowTemplateStep } from "@/types/api";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -36,10 +37,6 @@ function stepTypeColor(type: string) {
 function stepTypeLabel(type: string) {
   return STEP_TYPES.find((t) => t.value === type)?.label ?? type;
 }
-function fmt(v: string) {
-  return v.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 // ── Empty step factory ────────────────────────────────────────────────────────
 
 const emptyStep = (n: number): WorkflowTemplateStep => ({

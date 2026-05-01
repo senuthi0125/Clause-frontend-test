@@ -11,49 +11,8 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api, buildContractsQuery } from "@/lib/api";
+import { formatLabel, formatDate, formatCurrency, statusBadgeClass as riskBadgeClass } from "@/lib/utils";
 import type { Contract, ContractsResponse } from "@/types/api";
-
-function formatLabel(value?: string | null) {
-  return (value || "unrated")
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
-    .join(" ");
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function formatCurrency(value?: number | null) {
-  if (value == null) return "—";
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function riskBadgeClass(value?: string | null) {
-  switch ((value || "").toLowerCase()) {
-    case "high":
-      return "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300";
-    case "medium":
-      return "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300";
-    case "low":
-      return "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300";
-    default:
-      return "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300";
-  }
-}
 
 function getDaysRemaining(value?: string | null) {
   if (!value) return null;
