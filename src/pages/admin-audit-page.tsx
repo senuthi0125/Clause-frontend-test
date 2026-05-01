@@ -129,7 +129,8 @@ export default function AdminAuditPage() {
         </div>
       ) : null}
 
-      <AppCard tone="soft" className="mb-4">
+      <Card className="mb-4 border border-slate-200 bg-white shadow-sm">
+        <CardContent className="p-5">
         <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
           <Filter className="h-4 w-4" />
           Filters
@@ -140,7 +141,7 @@ export default function AdminAuditPage() {
             <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
               Resource type
             </label>
-            <AppInput
+            <Input
               value={resourceType}
               onChange={(e) => setResourceType(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && applyFilters()}
@@ -152,7 +153,7 @@ export default function AdminAuditPage() {
             <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
               Action
             </label>
-            <AppInput
+            <Input
               value={actionFilter}
               onChange={(e) => setActionFilter(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && applyFilters()}
@@ -164,13 +165,14 @@ export default function AdminAuditPage() {
             <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
               User ID
             </label>
-            <AppInput
+            <Input
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && applyFilters()}
               placeholder="clerk_id"
             />
           </div>
+        </div>
         </CardContent>
       </Card>
 
