@@ -179,9 +179,7 @@ export function AppShell({
     <div className="flex h-full flex-col items-center">
       <div className="pt-5">
         <div className="flex h-16 w-16 items-center justify-center rounded-[22px] bg-white/14 shadow-lg backdrop-blur-sm">
-          <div className="flex h-12 w-12 items-center justify-center rounded-[20px] bg-gradient-to-br from-cyan-400 via-blue-500 to-violet-500 shadow-[0_10px_24px_rgba(59,130,246,0.35)]">
-            <FileText className="h-6 w-6 text-white" />
-          </div>
+          <img src="/clause-logo.jpeg" alt="Clause" className="h-12 w-12 rounded-[20px] object-contain" />
         </div>
       </div>
 
@@ -205,9 +203,7 @@ export function AppShell({
     <>
       <div className="px-4 py-5">
         <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/6 px-3 py-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-500 to-violet-500 shadow-[0_10px_24px_rgba(59,130,246,0.35)]">
-            <FileText className="h-4.5 w-4.5 text-white" />
-          </div>
+          <img src="/clause-logo.jpeg" alt="Clause" className="h-10 w-10 rounded-2xl object-contain" />
           <div className="min-w-0">
             <p className="truncate text-[15px] font-bold tracking-tight text-white">
               clause
