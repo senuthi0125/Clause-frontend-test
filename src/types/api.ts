@@ -337,11 +337,23 @@ export type PinnedContract = {
   status?: string;
 };
 
+export type DashboardSection =
+  | "activity_trend"
+  | "status_overview"
+  | "contracts_by_type"
+  | "expiring_docs"
+  | "recent_activity"
+  | "risk_analysis";
+
+export type SectionVisibility = Partial<Record<DashboardSection, boolean>>;
+
 export type UserPreferences = {
   widget_visibility: WidgetVisibility;
+  section_visibility: SectionVisibility;
   default_contract_filter: string;
   pinned_contracts: PinnedContract[];
   accent_color: string;
+  activity_count: number;
 };
 
 // ─── Workflow Templates ───────────────────────────────────────────────────────
@@ -372,4 +384,72 @@ export type LifecycleStats = {
   waiting_to_active: number;
   became_active: number;
   upcoming_renewals: number;
+};
+
+// ─── Reports ─────────────────────────────────────────────
+
+export type ReportDimension =
+  | "contract_type"
+  | "status"
+  | "workflow_stage"
+  | "risk_level"
+  | "created_by"
+  | "month"
+  | "quarter"
+  | "year"
+  | "tags";
+
+export type ReportMeasure =
+  | "count"
+  | "total_value"
+  | "avg_value"
+  | "min_value"
+  | "max_value"
+  | "avg_risk_score"
+  | "max_risk_score"
+  | "min_risk_score";
+
+export type ReportChartType =
+  | "table"
+  | "bar"
+  | "pie"
+  | "line"
+  | "donut"
+  | "stacked_bar";
+
+export type ReportDefinition = {
+  dimensions: ReportDimension[];
+  measures: ReportMeasure[];
+  filters?: Record<string, unknown> | null;
+  chart_type: ReportChartType;
+  sort_by?: string | null;
+  sort_order?: "asc" | "desc";
+  limit?: number | null;
+};
+
+export type ReportColumn = {
+  key: string;
+  label: string;
+  type: string;
+};
+
+export type ReportSummary = {
+  total_rows: number;
+  total_contracts_matched: number;
+  summary_stats: Record<string, number>;
+};
+
+export type ReportResult = {
+  columns: ReportColumn[];
+  rows: Record<string, unknown>[];
+  summary: ReportSummary;
+  chart_type: ReportChartType;
+  generated_at: string;
+};
+
+export type ReportPreset = {
+  id: string;
+  name: string;
+  description: string;
+  definition: ReportDefinition;
 };

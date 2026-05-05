@@ -1,23 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Bell,
   CalendarDays,
-  CheckCheck,
   FileText,
   LayoutDashboard,
-  Layers,
   Menu,
   Moon,
   Shield,
-  ShieldAlert,
-  Sparkles,
   Sun,
-  Users,
-  ScrollText,
   LockKeyhole,
-  Workflow,
-  UploadCloud,
   Settings,
   X,
 } from "lucide-react";
@@ -81,58 +73,22 @@ export function AppShell({
 }: AppShellProps) {
   const location = useLocation();
   const { user } = useUser();
-  const { role, isAdmin, isManager, isAdminOrManager } = useRole();
-  const [adminMode, setAdminMode] = useState(false);
+  const { role, isAdmin, isAdminOrManager } = useRole();
   const [mobileOpen, setMobileOpen] = useState(false);
   void contractGroups;
-
-  useEffect(() => {
-    if (!isAdminOrManager) {
-      localStorage.removeItem("admin_mode");
-      setAdminMode(false);
-      return;
-    }
-    const stored = localStorage.getItem("admin_mode");
-    if (stored === "true") setAdminMode(true);
-    if (location.pathname.startsWith("/admin")) {
-      localStorage.setItem("admin_mode", "true");
-      setAdminMode(true);
-    }
-  }, [isAdminOrManager, location.pathname]);
 
   const mainNavigation = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Contracts", href: "/contracts", icon: FileText },
-    { label: "Upload Contract", href: "/upload", icon: UploadCloud },
-    { label: "AI Analysis", href: "/ai-analysis", icon: Sparkles },
-    { label: "Conflict Detection", href: "/conflict-detection", icon: Shield },
+{ label: "Conflict Detection", href: "/conflict-detection", icon: Shield },
     { label: "Calendar", href: "/calendar", icon: CalendarDays },
-    { label: "Risk Analysis", href: "/risk-analysis", icon: ShieldAlert },
     { label: "Settings", href: "/settings", icon: Settings },
   ];
 
-  const adminNavigation = [
-    { label: "Admin Dashboard", href: "/admin", icon: LockKeyhole },
-    { label: "User Management", href: "/admin/users", icon: Users },
-    { label: "Workflows", href: "/admin/workflows", icon: Workflow },
-    { label: "Workflow Templates", href: "/admin/workflow-templates", icon: Layers },
-    { label: "Approvals", href: "/admin/approvals", icon: CheckCheck },
-    { label: "Audit Logs", href: "/admin/audit", icon: ScrollText },
-    { label: "Notifications & Alerts", href: "/admin/notifications", icon: Bell },
-  ];
-
-  const managerNavigation = [
-    { label: "Workflows", href: "/admin/workflows", icon: Workflow },
-    { label: "Approvals", href: "/admin/approvals", icon: CheckCheck },
-  ];
-
-  const showAdminSection = isAdminOrManager && adminMode;
-  const activeNavigation = isAdmin ? adminNavigation : managerNavigation;
   const firstName = user?.firstName || user?.username || null;
 
   const handleAdminClick = () => {
     localStorage.setItem("admin_mode", "true");
-    setAdminMode(true);
   };
 
   const DesktopNavLink = ({
@@ -143,8 +99,8 @@ export function AppShell({
     onClick?: () => void;
   }) => {
     const isActive =
-      item.href === "/dashboard"
-        ? location.pathname === "/dashboard"
+      item.href === "/dashboard" || item.href === "/admin"
+        ? location.pathname === item.href
         : location.pathname.startsWith(item.href);
 
     const Icon = item.icon;
@@ -159,23 +115,23 @@ export function AppShell({
       >
         <div className="relative flex w-full flex-col items-center">
           {isActive && (
-            <span className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.9)]" />
+            <span className="absolute left-0 top-1/2 h-9 w-1 -translate-y-1/2 rounded-r-full bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.9)]" />
           )}
 
           <div
             className={cn(
-              "relative flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-200",
+              "relative flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-200",
               isActive
                 ? "bg-white text-indigo-600 shadow-lg"
                 : "text-white/85 hover:bg-white/14 hover:text-white"
             )}
           >
-            <Icon className="h-5 w-5" />
+            <Icon className="h-6 w-6" />
           </div>
 
           <span
             className={cn(
-              "mt-1.5 block max-w-[104px] text-center text-[10px] font-medium leading-3 transition-all duration-200",
+              "mt-1.5 block max-w-[120px] text-center text-[11px] font-medium leading-tight transition-all duration-200",
               isActive
                 ? "text-white"
                 : "text-white/72 group-hover:text-white"
@@ -196,8 +152,8 @@ export function AppShell({
     onClick?: () => void;
   }) => {
     const isActive =
-      item.href === "/dashboard"
-        ? location.pathname === "/dashboard"
+      item.href === "/dashboard" || item.href === "/admin"
+        ? location.pathname === item.href
         : location.pathname.startsWith(item.href);
 
     const Icon = item.icon;
@@ -221,86 +177,25 @@ export function AppShell({
 
   const DesktopSidebarContent = () => (
     <div className="flex h-full flex-col items-center">
-      <div className="pt-4">
+      <div className="pt-5">
         <div className="flex h-16 w-16 items-center justify-center rounded-[22px] bg-white/14 shadow-lg backdrop-blur-sm">
-          <div className="flex h-12 w-12 items-center justify-center rounded-[20px] bg-gradient-to-br from-cyan-400 via-blue-500 to-violet-500 shadow-[0_10px_24px_rgba(59,130,246,0.35)]">
-            <FileText className="h-5 w-5 text-white" />
-          </div>
+          <img src="/clause-logo.jpeg" alt="Clause" className="h-12 w-12 rounded-[20px] object-contain" />
         </div>
       </div>
 
       <div className="mt-4 text-center">
-        <p className="text-sm font-semibold tracking-tight text-white">clause</p>
+        <p className="text-[15px] font-semibold tracking-tight text-white">clause</p>
         <p className="mt-0.5 text-xs text-white/55">workspace</p>
       </div>
 
       <div className="my-4 h-px w-14 bg-white/15" />
 
-      <nav className="flex min-h-0 flex-1 flex-col items-center gap-3 overflow-y-auto px-2 pb-3">
+      <nav className="flex min-h-0 flex-1 flex-col items-center gap-1 overflow-y-auto px-2 pb-3">
         {mainNavigation.map((item) => (
           <DesktopNavLink key={item.href} item={item} />
         ))}
-
-        {showAdminSection && (
-          <>
-            <div className="my-2 h-px w-14 bg-white/12" />
-            {activeNavigation.map((item) => (
-              <DesktopNavLink key={item.href} item={item} />
-            ))}
-          </>
-        )}
       </nav>
 
-      <div className="pb-4">
-        <div className="flex flex-col items-center gap-4">
-          {isAdminOrManager && (
-            <Link
-              to={isAdmin ? "/admin" : "/admin/workflows"}
-              onClick={handleAdminClick}
-              title={isAdmin ? "Admin" : "Manage"}
-              aria-label={isAdmin ? "Admin" : "Manage"}
-              className={cn(
-                "group relative flex w-full justify-center",
-                location.pathname.startsWith("/admin") && "pointer-events-auto"
-              )}
-            >
-              <div className="relative flex w-full flex-col items-center">
-                <div
-                  className={cn(
-                    "flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-200",
-                    location.pathname.startsWith("/admin")
-                      ? "bg-white text-indigo-600 shadow-lg"
-                      : "text-white/85 hover:bg-white/14 hover:text-white"
-                  )}
-                >
-                  <LockKeyhole className="h-5 w-5" />
-                </div>
-                <span
-                  className={cn(
-                    "mt-1.5 text-center text-[10px] font-medium leading-3",
-                    location.pathname.startsWith("/admin")
-                      ? "text-white"
-                      : "text-white/72"
-                  )}
-                >
-                  {isAdmin ? "Admin" : "Manage"}
-                </span>
-              </div>
-            </Link>
-          )}
-
-          <div className="flex flex-col items-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-              <UserButton appearance={{ elements: { avatarBox: "h-8 w-8" } }} />
-            </div>
-            <span className="mt-1.5 max-w-[104px] truncate text-center text-[10px] font-medium text-white/72">
-              {firstName ??
-                user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] ??
-                "User"}
-            </span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 
@@ -308,9 +203,7 @@ export function AppShell({
     <>
       <div className="px-4 py-5">
         <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/6 px-3 py-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-500 to-violet-500 shadow-[0_10px_24px_rgba(59,130,246,0.35)]">
-            <FileText className="h-4.5 w-4.5 text-white" />
-          </div>
+          <img src="/clause-logo.jpeg" alt="Clause" className="h-10 w-10 rounded-2xl object-contain" />
           <div className="min-w-0">
             <p className="truncate text-[15px] font-bold tracking-tight text-white">
               clause
@@ -340,24 +233,6 @@ export function AppShell({
           ))}
         </div>
 
-        {showAdminSection && (
-          <div className="mt-6">
-            <div className="mb-2 px-3.5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/35">
-                {isAdmin ? "Admin" : "Management"}
-              </p>
-            </div>
-            <div className="space-y-1">
-              {activeNavigation.map((item) => (
-                <MobileNavLink
-                  key={item.href}
-                  item={item}
-                  onClick={() => setMobileOpen(false)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
       </nav>
 
       <div className="mx-4 mb-4 mt-2 h-px bg-white/10" />
@@ -400,16 +275,16 @@ export function AppShell({
       )}
 
       <div className="flex min-h-screen">
-        <aside className="hidden w-[188px] shrink-0 lg:flex">
-          <div className="flex w-full items-center justify-center px-5 py-8">
-            <div className="h-full min-h-[760px] w-[132px] rounded-[34px] bg-gradient-to-b from-[#6A67F6] via-[#6B63F2] to-[#7164FF] p-3 shadow-[0_30px_60px_-30px_rgba(91,82,255,0.75)] ring-1 ring-white/30">
+        <aside className="hidden w-[220px] shrink-0 lg:flex">
+          <div className="flex w-full items-center justify-center px-5 py-6">
+            <div className="flex h-full min-h-[calc(100vh-48px)] w-full flex-col rounded-[34px] bg-gradient-to-b from-[#6A67F6] via-[#6B63F2] to-[#7164FF] p-3 shadow-[0_30px_60px_-30px_rgba(91,82,255,0.75)] ring-1 ring-white/30">
               <DesktopSidebarContent />
             </div>
           </div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/92 backdrop-blur-md dark:border-white/8 dark:bg-[#0F1320]/95">
+          <header className="sticky top-0 z-30 bg-[#EEF1F7]/95 backdrop-blur-md dark:bg-[#0C0F1D]/95">
             <div className="flex items-center justify-between gap-4 px-5 py-3.5 xl:px-6">
               <button
                 onClick={() => setMobileOpen(true)}
@@ -445,15 +320,28 @@ export function AppShell({
                   </Link>
                 )}
 
-                <button className="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/8 dark:text-slate-400 dark:hover:bg-white/12">
+                <Link
+                  to={isAdminOrManager ? "/admin/notifications" : "/dashboard"}
+                  onClick={isAdminOrManager ? handleAdminClick : undefined}
+                  className="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/8 dark:text-slate-400 dark:hover:bg-white/12"
+                >
                   <Bell className="h-4 w-4" />
                   <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.65)]" />
-                </button>
+                </Link>
+
+                <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2.5 py-1 shadow-sm dark:border-white/10 dark:bg-white/8">
+                  <UserButton appearance={{ elements: { avatarBox: "h-6 w-6" } }} />
+                  <span className="hidden max-w-[96px] truncate text-sm font-medium text-slate-700 dark:text-slate-300 sm:block">
+                    {firstName ??
+                      user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] ??
+                      "User"}
+                  </span>
+                </div>
               </div>
             </div>
           </header>
 
-          <div className="border-b border-slate-200/60 bg-white px-5 pb-5 pt-5 dark:border-white/6 dark:bg-[#0F1320] xl:px-6">
+          <div className="bg-[#EEF1F7] px-5 pb-5 pt-5 dark:bg-[#0C0F1D] xl:px-6">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
               <div className="min-w-0">
                 <p className="mb-0.5 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
@@ -481,6 +369,7 @@ export function AppShell({
           </main>
         </div>
       </div>
+
     </div>
   );
 }

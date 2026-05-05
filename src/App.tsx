@@ -4,6 +4,7 @@ import {
   SignUp,
   SignedIn,
   SignedOut,
+  RedirectToSignIn,
 } from "@clerk/clerk-react";
 import LandingPage from "./pages/landing-page";
 import DashboardPage from "./pages/dashboard-page";
@@ -13,90 +14,131 @@ import ContractTemplatePage from "./pages/contract-template-page";
 import CreateContractPage from "./pages/create-contract-page";
 import ContractDetailsPage from "./pages/contract-details-page";
 import ConflictDetectionPage from "./pages/conflict-detection-page";
-import AIAnalysisPage from "./pages/ai-analysis-page";
-import RiskAnalysisPage from "./pages/risk-analysis-page";
 import AdminOverviewPage from "./pages/admin-overview-page";
 import AdminUsersPage from "./pages/admin-users-page";
 import AdminAuditPage from "./pages/admin-audit-page";
 import AdminApprovalsPage from "./pages/admin-approvals-page";
 import AdminNotificationsPage from "./pages/admin-notifications-page";
+import ReportsPage from "./pages/reports-page";
 import WorkflowsPage from "./pages/workflows-page";
 import WorkflowDetailPage from "./pages/workflow-detail-page";
 import WorkflowTemplatesPage from "./pages/workflow-templates-page";
-import UploadPipelinePage from "./pages/upload-pipeline-page";
 import SettingsPage from "./pages/settings-page";
 import { AuthBridge } from "./components/auth-bridge";
 import { ThemeProvider } from "./components/theme-provider";
+import { ChatPopup } from "./components/chat-popup";
+import { useRole } from "./hooks/use-role";
+
+function DashboardRouter() {
+  const { isAdmin } = useRole();
+  return isAdmin ? <AdminOverviewPage /> : <DashboardPage />;
+}
 
 const AUTH_FEATURES = [
-  { icon: "📄", text: "Centralise all your contracts in one place" },
-  { icon: "🤖", text: "AI-powered risk analysis and clause extraction" },
-  { icon: "✅", text: "Streamlined approval workflows" },
-  { icon: "🔔", text: "Automated expiry alerts via email" },
+  { text: "Centralise all your contracts in one place" },
+  { text: "Automated approval workflows and e-signatures" },
+  { text: "Risk analysis and clause-level review" },
+  { text: "Expiry alerts and renewal tracking" },
 ];
 
 function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen w-full">
       {/* Left branding panel */}
-      <div className="relative hidden lg:flex lg:w-[52%] flex-col justify-between overflow-hidden bg-gradient-to-br from-violet-700 via-indigo-700 to-blue-800 p-12 text-white">
-        {/* Decorative blobs */}
-        <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-white/5 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-[32rem] w-[32rem] rounded-full bg-white/5 blur-3xl" />
-        <div className="pointer-events-none absolute top-1/2 left-1/4 h-64 w-64 rounded-full bg-violet-500/20 blur-2xl" />
+      <div className="relative hidden lg:flex lg:w-[48%] flex-col justify-between overflow-hidden bg-[#0F172A] p-14 text-white">
+        {/* Subtle grid pattern */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
 
-        {/* Logo */}
+        {/* Thin top border accent */}
+        <div className="absolute left-0 top-0 h-px w-full bg-gradient-to-r from-transparent via-slate-500/40 to-transparent" />
+
         <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm ring-1 ring-white/20">
-            <span className="text-lg font-bold text-white">C</span>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/8">
+            <span className="text-base font-bold tracking-tight text-white">C</span>
           </div>
-          <span className="text-xl font-semibold tracking-tight">Clause</span>
+          <span className="text-[17px] font-semibold tracking-tight text-white">Clause</span>
         </div>
 
         {/* Hero text */}
-        <div className="relative z-10 space-y-6">
+        <div className="relative z-10 space-y-8">
           <div>
-            <h1 className="text-4xl font-bold leading-tight tracking-tight">
-              Contract management,
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Contract LifeCycle Management Platform
+            </p>
+            <h1 className="text-[2.4rem] font-bold leading-[1.15] tracking-tight text-white">
+              Every contract,
               <br />
-              <span className="text-violet-200">made intelligent.</span>
+              under control.
             </h1>
-            <p className="mt-4 text-base text-white/70 leading-relaxed max-w-sm">
-              Clause brings your entire contract lifecycle into one place — from creation and
-              approval to monitoring and renewal.
+            <p className="mt-5 max-w-[340px] text-[15px] leading-relaxed text-slate-400">
+              Clause gives your team a single place to draft, approve, track,
+              and renew contracts — with full audit history.
             </p>
           </div>
 
-          <ul className="space-y-3">
+          <ul className="space-y-3.5">
             {AUTH_FEATURES.map((f) => (
-              <li key={f.text} className="flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm backdrop-blur-sm">
-                  {f.icon}
+              <li key={f.text} className="flex items-start gap-3">
+                <span className="mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-slate-600 bg-slate-800">
+                  <svg
+                    className="h-2.5 w-2.5 text-slate-300"
+                    viewBox="0 0 10 8"
+                    fill="none"
+                  >
+                    <path
+                      d="M1 4l2.5 2.5L9 1"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </span>
-                <span className="text-sm text-white/80">{f.text}</span>
+                <span className="text-[13.5px] leading-snug text-slate-400">{f.text}</span>
               </li>
             ))}
           </ul>
+
+          {/* Stats strip */}
+          <div className="flex gap-8 border-t border-white/8 pt-6">
+            <div>
+              <p className="text-xl font-bold text-white">100%</p>
+              <p className="mt-0.5 text-xs text-slate-500">Audit trail</p>
+            </div>
+            <div>
+              <p className="text-xl font-bold text-white">Real-time</p>
+              <p className="mt-0.5 text-xs text-slate-500">Status tracking</p>
+            </div>
+            <div>
+              <p className="text-xl font-bold text-white">Secure</p>
+              <p className="mt-0.5 text-xs text-slate-500">Role-based access</p>
+            </div>
+          </div>
         </div>
 
-        {/* Bottom quote */}
+        {/* Footer */}
         <div className="relative z-10">
-          <p className="text-xs text-white/40">
-            © {new Date().getFullYear()} Clause · Secure · Private · AI-assisted
+          <p className="text-[11px] text-slate-600">
+            © {new Date().getFullYear()} Clause. All rights reserved.
           </p>
         </div>
       </div>
 
       {/* Right form panel */}
       <div className="flex flex-1 flex-col items-center justify-center bg-white px-6 py-12">
-        {/* Mobile logo */}
         <div className="mb-8 flex items-center gap-2 lg:hidden">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900">
             <span className="text-base font-bold text-white">C</span>
           </div>
           <span className="text-lg font-semibold text-slate-800">Clause</span>
         </div>
-
         {children}
       </div>
     </div>
@@ -108,6 +150,8 @@ export default function App() {
     <ThemeProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
+
           <Route
             path="/sign-in/*"
             element={
@@ -142,17 +186,15 @@ export default function App() {
               <>
                 <SignedIn>
                   <AuthBridge />
+                  <ChatPopup />
                   <Routes>
-                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/dashboard" element={<DashboardRouter />} />
                     <Route path="/contracts" element={<ContractsPage />} />
-                    <Route path="/upload" element={<UploadPipelinePage />} />
                     <Route path="/contracts/new" element={<ContractTemplatePage />} />
                     <Route path="/contracts/create" element={<CreateContractPage />} />
                     <Route path="/contracts/:id" element={<ContractDetailsPage />} />
-                    <Route path="/ai-analysis" element={<AIAnalysisPage />} />
                     <Route path="/conflict-detection" element={<ConflictDetectionPage />} />
                     <Route path="/calendar" element={<CalendarPage />} />
-                    <Route path="/risk-analysis" element={<RiskAnalysisPage />} />
                     <Route path="/workflows" element={<WorkflowsPage />} />
                     <Route path="/workflows/:id" element={<WorkflowDetailPage />} />
                     <Route path="/admin" element={<AdminOverviewPage />} />
@@ -160,6 +202,7 @@ export default function App() {
                     <Route path="/admin/approvals" element={<AdminApprovalsPage />} />
                     <Route path="/admin/audit" element={<AdminAuditPage />} />
                     <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
+                    <Route path="/admin/reports" element={<ReportsPage />} />
                     <Route path="/admin/workflows" element={<WorkflowsPage />} />
                     <Route path="/admin/workflows/:id" element={<WorkflowDetailPage />} />
                     <Route path="/admin/workflow-templates" element={<WorkflowTemplatesPage />} />
@@ -170,10 +213,7 @@ export default function App() {
                 </SignedIn>
 
                 <SignedOut>
-                  <Routes>
-                    <Route path="/" element={<LandingPage />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
+                  <RedirectToSignIn />
                 </SignedOut>
               </>
             }

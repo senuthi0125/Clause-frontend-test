@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
+  CalendarClock,
   CheckCircle2,
   Clock3,
   FileText,
   Pin,
   PinOff,
   ShieldAlert,
+  ShieldCheck,
+  ShieldQuestion,
   Sparkles,
   TrendingUp,
   BarChart3,
@@ -25,10 +28,11 @@ import {
   Bar,
 } from "recharts";
 import { AppShell } from "@/components/layout/app-shell";
-import { AppCard } from "@/components/ui/app-card";
-import { AppBadge } from "@/components/ui/app-badge";
-import { AppEmptyState } from "@/components/ui/app-empty-state";
-import { api } from "@/lib/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { api, buildContractsQuery } from "@/lib/api";
+import { formatLabel as formatTypeLabel, formatDate, formatCurrency, statusBadgeClass as statusBadgeClass } from "@/lib/utils";
+import type { Contract } from "@/types/api";
 import { usePreferences } from "@/hooks/use-preferences";
 import { useTheme } from "@/components/theme-provider";
 import type { DashboardStats } from "@/types/api";
@@ -114,24 +118,6 @@ type ActivityItem = {
   updated_at: string;
 };
 
-function formatTypeLabel(value: string) {
-  return value
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p))
-    .join(" ");
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Invalid date";
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 function getDaysLabel(days: number) {
   if (days < 0) return "Overdue";
   if (days === 0) return "Due today";
@@ -148,22 +134,6 @@ function getPercent(value: number, total: number) {
 function getMinBarWidth(value: number, total: number) {
   if (!total || value <= 0) return 0;
   return Math.max((value / total) * 100, 8);
-}
-
-function statusBadgeVariant(
-  status?: string
-): "slate" | "emerald" | "rose" | "blue" {
-  switch ((status || "").toLowerCase()) {
-    case "active":
-      return "emerald";
-    case "expired":
-      return "rose";
-    case "renewed":
-      return "blue";
-    case "draft":
-    default:
-      return "slate";
-  }
 }
 
 function buildTrendData(activity: ActivityItem[]) {
@@ -259,7 +229,7 @@ function PinnedContractsSection({
         {pinned.map((contract) => (
           <div
             key={contract.id}
-            className="group flex items-center gap-3 rounded-2xl border bg-white px-4 py-3 shadow-sm transition-all hover:shadow-md dark:border-white/8 dark:bg-[#131829]"
+            className="group flex items-center gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm transition-all hover:shadow-md"
             style={{ borderColor: "#E2E8F0" }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLDivElement).style.borderColor = t.border;
@@ -270,7 +240,7 @@ function PinnedContractsSection({
           >
             <Link
               to={`/contracts/${contract.id}`}
-              className="flex items-center gap-2 text-sm font-semibold text-slate-900 transition-colors dark:text-white"
+              className="flex items-center gap-2 text-sm font-semibold text-slate-900 transition-colors"
               onMouseEnter={(e) => (e.currentTarget.style.color = t.text)}
               onMouseLeave={(e) => (e.currentTarget.style.color = "")}
             >
@@ -279,12 +249,13 @@ function PinnedContractsSection({
             </Link>
 
             {contract.status && (
-              <AppBadge
-                variant={statusBadgeVariant(contract.status)}
-                className="px-2 py-0.5"
+              <Badge
+                className={`rounded-full px-2 py-0.5 text-xs ${statusBadgeClass(
+                  contract.status
+                )}`}
               >
                 {formatTypeLabel(contract.status)}
-              </AppBadge>
+              </Badge>
             )}
 
             <button
@@ -307,10 +278,13 @@ export default function DashboardPage() {
   const [statuses, setStatuses] = useState<StatusItem[]>([]);
   const [expiring, setExpiring] = useState<ExpiringItem[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [allContracts, setAllContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const { prefs, pinContract, unpinContract } = usePreferences();
+  const sec = (key: string) => prefs.section_visibility?.[key as keyof typeof prefs.section_visibility] !== false;
+  const actCount = prefs.activity_count ?? 10;
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === "dark";
 
@@ -322,13 +296,14 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
 
-      const [statsData, typeData, statusData, expiringData, activityData] =
+      const [statsData, typeData, statusData, expiringData, activityData, contractsData] =
         await Promise.all([
           api.getDashboardStats(),
           api.getContractsByType(),
           api.getContractsByStatus(),
           api.getExpiringSoon(),
           api.getRecentActivity(),
+          api.listContracts(buildContractsQuery({ per_page: 200 })),
         ]);
 
       setStats(statsData);
@@ -336,6 +311,7 @@ export default function DashboardPage() {
       setStatuses(statusData);
       setExpiring(expiringData);
       setActivity(activityData);
+      setAllContracts(contractsData.contracts ?? []);
     } catch (err) {
       setError(
         err instanceof Error
@@ -368,6 +344,59 @@ export default function DashboardPage() {
   const lowRisk = stats?.risk_summary.low ?? 0;
   const totalRisk = lowRisk + mediumRisk + highRisk;
 
+  const unratedCount = useMemo(
+    () => allContracts.filter(c => !c.risk_level).length,
+    [allContracts]
+  );
+
+  const riskyContracts = useMemo(() => {
+    const riskWeight = (v?: string | null) =>
+      v?.toLowerCase() === "high" ? 3 : v?.toLowerCase() === "medium" ? 2 : v?.toLowerCase() === "low" ? 1 : 0;
+    const daysLeft = (d?: string | null) => {
+      if (!d) return null;
+      const diff = new Date(d).getTime() - Date.now();
+      return isNaN(diff) ? null : Math.ceil(diff / 86400000);
+    };
+    return [...allContracts]
+      .filter(c => c.risk_level?.toLowerCase() === "high" || c.risk_level?.toLowerCase() === "medium")
+      .sort((a, b) => {
+        const rDiff = riskWeight(b.risk_level) - riskWeight(a.risk_level);
+        if (rDiff !== 0) return rDiff;
+        const ad = daysLeft(a.end_date), bd = daysLeft(b.end_date);
+        if (ad == null && bd == null) return 0;
+        if (ad == null) return 1;
+        if (bd == null) return -1;
+        return ad - bd;
+      });
+  }, [allContracts]);
+
+  const expiringRisky = useMemo(() => {
+    const daysLeft = (d?: string | null) => {
+      if (!d) return null;
+      const diff = new Date(d).getTime() - Date.now();
+      return isNaN(diff) ? null : Math.ceil(diff / 86400000);
+    };
+    return riskyContracts.filter(c => { const d = daysLeft(c.end_date); return d != null && d <= 90; }).slice(0, 6);
+  }, [riskyContracts]);
+
+  const riskByType = useMemo(() => {
+    const map = new Map<string, { total: number; high: number; medium: number; low: number; unrated: number }>();
+    allContracts.forEach(c => {
+      const key = formatTypeLabel(c.contract_type || "other");
+      if (!map.has(key)) map.set(key, { total: 0, high: 0, medium: 0, low: 0, unrated: 0 });
+      const g = map.get(key)!;
+      g.total++;
+      const r = (c.risk_level || "").toLowerCase();
+      if (r === "high") g.high++; else if (r === "medium") g.medium++; else if (r === "low") g.low++; else g.unrated++;
+    });
+    return [...map.entries()].map(([type, v]) => ({ type, ...v })).sort((a, b) => b.total - a.total);
+  }, [allContracts]);
+
+  const topRiskType = useMemo(() => {
+    if (!riskByType.length) return null;
+    return [...riskByType].sort((a, b) => (b.high * 3 + b.medium * 2) - (a.high * 3 + a.medium * 2))[0];
+  }, [riskByType]);
+
   const topStatus = useMemo(() => {
     if (!statuses.length) return null;
     return [...statuses].sort((a, b) => b.count - a.count)[0];
@@ -396,8 +425,6 @@ export default function DashboardPage() {
       themed: true,
       iconWrap: "",
       accent: "",
-      cardBg:
-        "bg-violet-50 border-violet-100 dark:bg-violet-500/10 dark:border-violet-500/20",
     },
     {
       key: "active_contracts" as const,
@@ -409,8 +436,6 @@ export default function DashboardPage() {
       iconWrap:
         "bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20",
       accent: "text-emerald-600",
-      cardBg:
-        "bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20",
     },
     {
       key: "pending_approvals" as const,
@@ -422,8 +447,6 @@ export default function DashboardPage() {
       iconWrap:
         "bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20",
       accent: "text-amber-600",
-      cardBg:
-        "bg-amber-50 border-amber-100 dark:bg-amber-500/10 dark:border-amber-500/20",
     },
     {
       key: "high_risk" as const,
@@ -435,8 +458,6 @@ export default function DashboardPage() {
       iconWrap:
         "bg-gradient-to-br from-rose-500 to-red-500 text-white shadow-lg shadow-rose-500/20",
       accent: "text-rose-600",
-      cardBg:
-        "bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20",
     },
   ];
 
@@ -473,8 +494,8 @@ export default function DashboardPage() {
 
   return (
     <AppShell
-      title="Contract Overview"
-      subtitle="Live overview of Total Contracts, Active Contracts, Pending Approvals, and High Risk Items"
+      title="Contract operations overview"
+      subtitle="Live overview of contracts, approvals, activity, and AI-powered risk signals."
       contractGroups={contractGroups}
     >
       {error ? (
@@ -506,14 +527,14 @@ export default function DashboardPage() {
               const Icon = card.icon;
 
               return (
-                <div
+                <Card
                   key={card.key}
-                  className={`overflow-hidden rounded-3xl border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${card.cardBg}`}
+                  className="overflow-hidden rounded-3xl border border-slate-200/80 dark:border-white/8 bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
                 >
-                  <div className="p-6">
+                  <CardContent className="p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div className="space-y-3">
-                        <p className="text-sm font-medium text-slate-500 dark:text-slate-300">
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                           {card.title}
                         </p>
                         <div className="flex items-end gap-2">
@@ -529,9 +550,7 @@ export default function DashboardPage() {
                             Live
                           </span>
                         </div>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                          {card.helper}
-                        </p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{card.helper}</p>
                       </div>
 
                       <div
@@ -550,20 +569,25 @@ export default function DashboardPage() {
                         <Icon className="h-5 w-5" />
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               );
             })}
           </section>
         ) : (
-          <AppEmptyState
-            title="All stat cards are hidden."
-            description="Go to Settings to show them again."
-            className="rounded-3xl"
-          />
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-8 text-center">
+            <p className="text-sm text-slate-500">All stat cards are hidden.</p>
+            <Link
+              to="/settings"
+              className="mt-2 block text-sm font-medium hover:underline"
+              style={{ color: t.text }}
+            >
+              Go to Settings to show them
+            </Link>
+          </div>
         )}
 
-        <AppCard tone="soft">
+        {sec("activity_trend") && <section className="rounded-3xl border border-slate-200/80 dark:border-white/8 bg-white dark:bg-[#131829] p-6 shadow-sm">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <div className="mb-1.5 flex items-center gap-2">
@@ -576,7 +600,9 @@ export default function DashboardPage() {
                 Contract activity — last 30 days
               </h2>
             </div>
-            <AppBadge variant="blue">Live data</AppBadge>
+            <Badge className="rounded-full border border-indigo-200/60 bg-indigo-50 text-indigo-700 hover:bg-indigo-50">
+              Live data
+            </Badge>
           </div>
 
           {loading ? (
@@ -645,372 +671,306 @@ export default function DashboardPage() {
               </AreaChart>
             </ResponsiveContainer>
           )}
-        </AppCard>
+        </section>}
 
-        <section className="grid gap-6 xl:grid-cols-[1.45fr_0.95fr]">
-          <AppCard tone="soft">
-            <div className="mb-6 flex items-start justify-between gap-4">
-              <div>
-                <div className="mb-2 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" style={{ color: t.muted }} />
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    Status snapshot
-                  </span>
-                </div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                  Contract status overview
-                </h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Real-time status distribution from your contract repository.
-                </p>
-              </div>
-              {topStatus ? (
-                <div className="rounded-2xl border border-violet-100 dark:border-violet-500/20 bg-violet-100/70 dark:bg-violet-500/15 px-4 py-3 text-right">
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    Largest segment
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
-                    {formatTypeLabel(topStatus.status)}
-                  </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {topStatus.count} contracts
-                  </p>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="space-y-4">
-              {!loading && statuses.length === 0 ? (
-                <AppEmptyState title="No status data found." />
-              ) : null}
-
-              {statuses.map((item) => (
-                <div
-                  key={item.status}
-                  className="rounded-2xl border border-violet-100 dark:border-violet-500/20 bg-violet-100/55 dark:bg-violet-500/12 p-4"
-                >
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-white">
-                        {formatTypeLabel(item.status)}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {getPercent(item.count, totalContracts)}% of all
-                        contracts
-                      </p>
-                    </div>
-                    <AppBadge variant="dark">{item.count}</AppBadge>
+        {sec("status_overview") && <section className="grid gap-6 xl:grid-cols-[1.45fr_0.95fr]">
+          <Card className="rounded-3xl border border-slate-200/80 dark:border-white/8 bg-card shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" style={{ color: t.muted }} />
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                      Status snapshot
+                    </span>
                   </div>
-
-                  <div className="h-2.5 overflow-hidden rounded-full bg-slate-200 dark:bg-white/15">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${getMinBarWidth(
-                          item.count,
-                          totalContracts
-                        )}%`,
-                        background: `linear-gradient(to right, ${t.from}, ${t.to})`,
-                      }}
-                    />
+                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                    Contract status overview
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Real-time status distribution from your contract repository.
+                  </p>
+                </div>
+                {topStatus ? (
+                  <div className="rounded-2xl border border-slate-200 dark:border-white/8 bg-slate-50 dark:bg-white/5 px-4 py-3 text-right">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                      Largest segment
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
+                      {formatTypeLabel(topStatus.status)}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {topStatus.count} contracts
+                    </p>
                   </div>
-                </div>
-              ))}
-            </div>
-          </AppCard>
-
-          <AppCard tone="soft">
-            <div className="mb-6">
-              <div className="mb-2 flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 text-violet-500" />
-                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  AI risk summary
-                </span>
-              </div>
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                Risk distribution
-              </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Based on your backend AI analysis data.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <div className="relative flex h-[270px] w-[270px] items-center justify-center">
-                <svg viewBox="0 0 240 240" className="-rotate-90 h-[240px] w-[240px]">
-                  <circle
-                    cx="120"
-                    cy="120"
-                    r={radius}
-                    fill="none"
-                    stroke={dark ? "rgba(255,255,255,0.08)" : "#E5E7EB"}
-                    strokeWidth="24"
-                  />
-                  {(() => {
-                    let cumulativeOffset = 0;
-                    return ringSegments.map((segment) => {
-                      const dash = (segment.percent / 100) * circumference;
-                      const dashArray = `${dash} ${circumference}`;
-                      const dashOffset = -cumulativeOffset;
-                      cumulativeOffset += dash + 10;
-
-                      return (
-                        <circle
-                          key={segment.key}
-                          cx="120"
-                          cy="120"
-                          r={radius}
-                          fill="none"
-                          stroke={segment.color}
-                          strokeWidth="24"
-                          strokeLinecap="round"
-                          strokeDasharray={dashArray}
-                          strokeDashoffset={dashOffset}
-                        />
-                      );
-                    });
-                  })()}
-                </svg>
-
-                <div className="absolute flex flex-col items-center justify-center text-center">
-                  <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                    Total
-                  </span>
-                  <span className="mt-1 text-5xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                    {loading ? "..." : totalRisk}
-                  </span>
-                  <span className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Analysed contracts
-                  </span>
-                </div>
+                ) : null}
               </div>
 
-              <div className="mt-2 w-full space-y-3">
-                {[
-                  {
-                    label: "Low risk",
-                    count: lowRisk,
-                    percent: getPercent(lowRisk, totalRisk),
-                    color: t.ring1,
-                  },
-                  {
-                    label: "Medium risk",
-                    count: mediumRisk,
-                    percent: getPercent(mediumRisk, totalRisk),
-                    color: t.ring2,
-                  },
-                  {
-                    label: "High risk",
-                    count: highRisk,
-                    percent: getPercent(highRisk, totalRisk),
-                    color: "#F43F5E",
-                  },
-                ].map((item) => (
+              <div className="space-y-4">
+                {!loading && statuses.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                    No status data found.
+                  </div>
+                ) : null}
+
+                {statuses.map((item) => (
                   <div
-                    key={item.label}
-                    className="flex items-center justify-between rounded-2xl border border-violet-100 dark:border-violet-500/20 bg-violet-100/55 dark:bg-violet-500/12 px-4 py-3"
+                    key={item.status}
+                    className="rounded-2xl border border-slate-200/80 dark:border-white/8 bg-slate-50/70 dark:bg-white/4 p-4"
                   >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      />
+                    <div className="mb-3 flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white">
-                          {item.label}
+                        <p className="font-medium text-slate-900 dark:text-white">
+                          {formatTypeLabel(item.status)}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {item.count} contracts
+                          {getPercent(item.count, totalContracts)}% of all
+                          contracts
                         </p>
                       </div>
+                      <Badge className="rounded-full bg-slate-900 px-3 py-1 text-white hover:bg-slate-900">
+                        {item.count}
+                      </Badge>
                     </div>
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                      {item.percent}%
-                    </span>
+
+                    <div className="h-2.5 overflow-hidden rounded-full bg-slate-200 dark:bg-white/15">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${getMinBarWidth(
+                            item.count,
+                            totalContracts
+                          )}%`,
+                          background: `linear-gradient(to right, ${t.from}, ${t.to})`,
+                        }}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
-          </AppCard>
-        </section>
+            </CardContent>
+          </Card>
 
-        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          <AppCard tone="soft">
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <div className="mb-1.5 flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-cyan-500" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
-                    Type breakdown
+          <Card className="rounded-3xl border border-slate-200/80 dark:border-white/8 bg-card shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-6">
+                <div className="mb-2 flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-violet-500" />
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                    AI risk summary
                   </span>
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                  Contracts by type
-                </h2>
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="h-48 w-full animate-pulse rounded-xl bg-slate-200" />
-            ) : typeChartData.length === 0 ? (
-              <AppEmptyState title="No type data available." />
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart
-                  data={typeChartData}
-                  margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke={
-                      dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"
-                    }
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="name"
-                    tick={{
-                      fontSize: 11,
-                      fill: dark ? "#6B7280" : "#94A3B8",
-                    }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{
-                      fontSize: 11,
-                      fill: dark ? "#6B7280" : "#94A3B8",
-                    }}
-                    axisLine={false}
-                    tickLine={false}
-                    allowDecimals={false}
-                  />
-                  <Tooltip content={<ChartTooltip dark={dark} />} />
-                  <Bar
-                    dataKey="count"
-                    name="Contracts"
-                    fill={t.from}
-                    radius={[6, 6, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </AppCard>
-
-          <AppCard tone="soft">
-            <div className="mb-6 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                  Upcoming and due documents
+                  Risk distribution
                 </h2>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Contracts expiring within 30 days. Pin any to your dashboard
-                  for quick access.
+                  Based on your backend AI analysis data.
                 </p>
               </div>
-              <div
-                className="hidden rounded-2xl px-3 py-2 text-right sm:block"
-                style={{ backgroundColor: t.light }}
-              >
-                <p
-                  className="text-xs uppercase tracking-[0.2em]"
-                  style={{ color: t.muted }}
-                >
-                  Focus
-                </p>
-                <p className="text-sm font-semibold" style={{ color: t.text }}>
-                  Time-sensitive
-                </p>
-              </div>
-            </div>
 
-            <div className="space-y-4">
-              {!loading && expiring.length === 0 ? (
-                <AppEmptyState title="No active contracts are expiring soon." />
-              ) : null}
+              <div className="flex flex-col items-center">
+                <div className="relative flex h-[270px] w-[270px] items-center justify-center">
+                  <svg viewBox="0 0 240 240" className="-rotate-90 h-[240px] w-[240px]">
+                    <circle
+                      cx="120"
+                      cy="120"
+                      r={radius}
+                      fill="none"
+                      stroke="#E5E7EB"
+                      strokeWidth="24"
+                    />
+                    {(() => {
+                      let cumulativeOffset = 0;
+                      return ringSegments.map((segment) => {
+                        const dash = (segment.percent / 100) * circumference;
+                        const dashArray = `${dash} ${circumference}`;
+                        const dashOffset = -cumulativeOffset;
+                        cumulativeOffset += dash + 10;
 
-              {expiring.map((item) => {
-                const pinned = prefs.pinned_contracts.some(
-                  (p) => p.id === item.id
-                );
+                        return (
+                          <circle
+                            key={segment.key}
+                            cx="120"
+                            cy="120"
+                            r={radius}
+                            fill="none"
+                            stroke={segment.color}
+                            strokeWidth="24"
+                            strokeLinecap="round"
+                            strokeDasharray={dashArray}
+                            strokeDashoffset={dashOffset}
+                          />
+                        );
+                      });
+                    })()}
+                  </svg>
 
-                return (
-                  <div
-                    key={item.id}
-                    className="group flex items-start justify-between gap-4 rounded-2xl border border-violet-100 dark:border-violet-500/20 bg-violet-100/55 dark:bg-violet-500/12 px-5 py-4 transition-all duration-200"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span
-                        className="mt-2 h-3 w-3 rounded-full shadow-sm"
-                        style={{
-                          backgroundColor: t.muted,
-                          boxShadow: `0 2px 6px ${t.from}50`,
-                        }}
-                      />
-                      <div>
-                        <p className="font-semibold text-slate-900 dark:text-white">
-                          {item.title}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                          {formatTypeLabel(item.contract_type)} · ends{" "}
-                          {formatDate(item.end_date)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex shrink-0 flex-col items-end gap-2">
-                      <AppBadge variant="dark">
-                        {getDaysLabel(item.days_remaining)}
-                      </AppBadge>
-                      <button
-                        onClick={() =>
-                          pinned
-                            ? unpinContract(item.id)
-                            : pinContract({ id: item.id, title: item.title })
-                        }
-                        className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all"
-                        style={
-                          pinned
-                            ? { backgroundColor: t.light, color: t.text }
-                            : { color: "#94A3B8" }
-                        }
-                      >
-                        {pinned ? (
-                          <PinOff className="h-3 w-3" />
-                        ) : (
-                          <Pin className="h-3 w-3" />
-                        )}
-                        {pinned ? "Pinned" : "Pin"}
-                      </button>
-                    </div>
+                  <div className="absolute flex flex-col items-center justify-center text-center">
+                    <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
+                      Total
+                    </span>
+                    <span className="mt-1 text-5xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                      {loading ? "..." : totalRisk}
+                    </span>
+                    <span className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      Analysed contracts
+                    </span>
                   </div>
-                );
-              })}
-            </div>
-          </AppCard>
-        </section>
+                </div>
 
-        <section>
-          <AppCard tone="soft">
-            <div className="mb-6 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-                  Recent activity
-                </h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Latest updates. Pin any contract for quick access.
-                </p>
+                <div className="mt-2 w-full space-y-3">
+                  {[
+                    {
+                      label: "Low risk",
+                      count: lowRisk,
+                      percent: getPercent(lowRisk, totalRisk),
+                      color: t.ring1,
+                    },
+                    {
+                      label: "Medium risk",
+                      count: mediumRisk,
+                      percent: getPercent(mediumRisk, totalRisk),
+                      color: t.ring2,
+                    },
+                    {
+                      label: "High risk",
+                      count: highRisk,
+                      percent: getPercent(highRisk, totalRisk),
+                      color: "#F43F5E",
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-center justify-between rounded-2xl border border-slate-200 dark:border-white/8 bg-slate-50 dark:bg-white/4 px-4 py-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">
+                            {item.label}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {item.count} contracts
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        {item.percent}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <TrendingUp className="h-5 w-5 text-slate-400" />
-            </div>
+            </CardContent>
+          </Card>
+        </section>}
 
-            <div className="space-y-4">
-              {!loading && activity.length === 0 ? (
-                <AppEmptyState title="No recent activity found." />
-              ) : null}
+        {sec("contracts_by_type") && <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          <Card className="rounded-3xl border border-slate-200/80 dark:border-white/8 bg-card shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4 text-cyan-500" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                      Type breakdown
+                    </span>
+                  </div>
+                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                    Contracts by type
+                  </h2>
+                </div>
+              </div>
 
-              <div className="grid gap-4 lg:grid-cols-2">
-                {activity.map((item) => {
+              {loading ? (
+                <div className="h-48 w-full animate-pulse rounded-xl bg-slate-200" />
+              ) : typeChartData.length === 0 ? (
+                <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-slate-200 text-sm text-slate-500">
+                  No type data available.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart
+                    data={typeChartData}
+                    margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke={
+                        dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"
+                      }
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="name"
+                      tick={{
+                        fontSize: 11,
+                        fill: dark ? "#6B7280" : "#94A3B8",
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{
+                        fontSize: 11,
+                        fill: dark ? "#6B7280" : "#94A3B8",
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                      allowDecimals={false}
+                    />
+                    <Tooltip content={<ChartTooltip dark={dark} />} />
+                    <Bar
+                      dataKey="count"
+                      name="Contracts"
+                      fill={t.from}
+                      radius={[6, 6, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl border border-slate-200/80 dark:border-white/8 bg-card shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                    Upcoming and due documents
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Contracts expiring within 30 days. Pin any to your dashboard
+                    for quick access.
+                  </p>
+                </div>
+                <div
+                  className="hidden rounded-2xl px-3 py-2 text-right sm:block"
+                  style={{ backgroundColor: t.light }}
+                >
+                  <p
+                    className="text-xs uppercase tracking-[0.2em]"
+                    style={{ color: t.muted }}
+                  >
+                    Focus
+                  </p>
+                  <p className="text-sm font-semibold" style={{ color: t.text }}>
+                    Time-sensitive
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {!loading && expiring.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                    No active contracts are expiring soon.
+                  </div>
+                ) : null}
+
+                {expiring.map((item) => {
                   const pinned = prefs.pinned_contracts.some(
                     (p) => p.id === item.id
                   );
@@ -1018,71 +978,357 @@ export default function DashboardPage() {
                   return (
                     <div
                       key={item.id}
-                      className="rounded-2xl border border-violet-100 dark:border-violet-500/20 bg-violet-100/50 dark:bg-violet-500/12 px-4 py-4 transition-all duration-200 hover:border-violet-200 dark:hover:border-violet-400/30 hover:shadow-sm"
+                      className="group flex items-start justify-between gap-4 rounded-2xl border border-slate-200 dark:border-white/8 bg-slate-50/70 dark:bg-white/4 px-5 py-4 transition-all duration-200"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-slate-900 dark:text-white">
+                      <div className="flex items-start gap-3">
+                        <span
+                          className="mt-2 h-3 w-3 rounded-full shadow-sm"
+                          style={{
+                            backgroundColor: t.muted,
+                            boxShadow: `0 2px 6px ${t.from}50`,
+                          }}
+                        />
+                        <div>
+                          <p className="font-semibold text-slate-900 dark:text-white">
                             {item.title}
                           </p>
-                          <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <AppBadge
-                              variant="violet"
-                              className="px-2 py-0.5"
-                              style={{
-                                backgroundColor: t.light,
-                                color: t.text,
-                              }}
-                            >
-                              {formatTypeLabel(item.status)}
-                            </AppBadge>
-                            <AppBadge variant="slate" className="px-2 py-0.5">
-                              {formatTypeLabel(item.workflow_stage)}
-                            </AppBadge>
-                          </div>
+                          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                            {formatTypeLabel(item.contract_type)} · ends{" "}
+                            {formatDate(item.end_date)}
+                          </p>
                         </div>
+                      </div>
 
-                        <div className="flex shrink-0 flex-col items-end gap-2">
-                          <div className="flex items-center gap-1 text-xs text-slate-400">
-                            <span>{formatDate(item.updated_at)}</span>
-                            <ArrowRight className="h-3.5 w-3.5" />
-                          </div>
-                          <button
-                            onClick={() =>
-                              pinned
-                                ? unpinContract(item.id)
-                                : pinContract({
-                                    id: item.id,
-                                    title: item.title,
-                                    status: item.status,
-                                  })
-                            }
-                            className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all"
-                            style={
-                              pinned
-                                ? {
-                                    backgroundColor: t.light,
-                                    color: t.text,
-                                  }
-                                : { color: "#94A3B8" }
-                            }
-                          >
-                            {pinned ? (
-                              <PinOff className="h-3 w-3" />
-                            ) : (
-                              <Pin className="h-3 w-3" />
-                            )}
-                            {pinned ? "Pinned" : "Pin"}
-                          </button>
-                        </div>
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <Badge className="rounded-full bg-slate-900 px-3 py-1 text-white hover:bg-slate-900">
+                          {getDaysLabel(item.days_remaining)}
+                        </Badge>
+                        <button
+                          onClick={() =>
+                            pinned
+                              ? unpinContract(item.id)
+                              : pinContract({ id: item.id, title: item.title })
+                          }
+                          className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all"
+                          style={
+                            pinned
+                              ? { backgroundColor: t.light, color: t.text }
+                              : { color: "#94A3B8" }
+                          }
+                        >
+                          {pinned ? (
+                            <PinOff className="h-3 w-3" />
+                          ) : (
+                            <Pin className="h-3 w-3" />
+                          )}
+                          {pinned ? "Pinned" : "Pin"}
+                        </button>
                       </div>
                     </div>
                   );
                 })}
               </div>
+            </CardContent>
+          </Card>
+        </section>}
+
+        {sec("recent_activity") && <section>
+          <Card className="rounded-3xl border border-slate-200/80 dark:border-white/8 bg-card shadow-sm">
+            <CardContent className="p-6">
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                    Recent activity
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Latest updates. Pin any contract for quick access.
+                  </p>
+                </div>
+                <TrendingUp className="h-5 w-5 text-slate-400" />
+              </div>
+
+              <div className="space-y-4">
+                {!loading && activity.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                    No recent activity found.
+                  </div>
+                ) : null}
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {activity.slice(0, actCount).map((item) => {
+                    const pinned = prefs.pinned_contracts.some(
+                      (p) => p.id === item.id
+                    );
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-white/4 px-4 py-4 transition-all duration-200 hover:border-slate-300 dark:hover:border-white/15 hover:shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-slate-900 dark:text-white">
+                              {item.title}
+                            </p>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <Badge
+                                className="rounded-full px-2 py-0.5 text-xs"
+                                style={{
+                                  backgroundColor: t.light,
+                                  color: t.text,
+                                }}
+                              >
+                                {formatTypeLabel(item.status)}
+                              </Badge>
+                              <Badge className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-100">
+                                {formatTypeLabel(item.workflow_stage)}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <div className="flex shrink-0 flex-col items-end gap-2">
+                            <div className="flex items-center gap-1 text-xs text-slate-400">
+                              <span>{formatDate(item.updated_at)}</span>
+                              <ArrowRight className="h-3.5 w-3.5" />
+                            </div>
+                            <button
+                              onClick={() =>
+                                pinned
+                                  ? unpinContract(item.id)
+                                  : pinContract({
+                                      id: item.id,
+                                      title: item.title,
+                                      status: item.status,
+                                    })
+                              }
+                              className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all"
+                              style={
+                                pinned
+                                  ? {
+                                      backgroundColor: t.light,
+                                      color: t.text,
+                                    }
+                                  : { color: "#94A3B8" }
+                              }
+                            >
+                              {pinned ? (
+                                <PinOff className="h-3 w-3" />
+                              ) : (
+                                <Pin className="h-3 w-3" />
+                              )}
+                              {pinned ? "Pinned" : "Pin"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>}
+
+        {/* ── Risk Analysis ─────────────────────────────────────────── */}
+        {sec("risk_analysis") && <section>
+          <div className="mb-4 flex items-center gap-3">
+            <ShieldAlert className="h-5 w-5 text-red-500" />
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">Risk Analysis</h2>
+          </div>
+
+          {/* Summary cards */}
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Card className="border border-slate-200 dark:border-white/8 bg-white dark:bg-[#131829] shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-slate-500">High Risk</p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{loading ? "—" : highRisk}</p>
+                    <p className="mt-2 text-sm text-slate-500">Immediate attention</p>
+                  </div>
+                  <div className="rounded-2xl bg-red-50 p-3 text-red-600"><ShieldAlert className="h-6 w-6" /></div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border border-slate-200 dark:border-white/8 bg-white dark:bg-[#131829] shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-slate-500">Medium Risk</p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{loading ? "—" : mediumRisk}</p>
+                    <p className="mt-2 text-sm text-slate-500">Needs monitoring</p>
+                  </div>
+                  <div className="rounded-2xl bg-amber-50 p-3 text-amber-600"><AlertTriangle className="h-6 w-6" /></div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border border-slate-200 dark:border-white/8 bg-white dark:bg-[#131829] shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-slate-500">Low Risk</p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{loading ? "—" : lowRisk}</p>
+                    <p className="mt-2 text-sm text-slate-500">Lower priority</p>
+                  </div>
+                  <div className="rounded-2xl bg-green-50 p-3 text-green-600"><ShieldCheck className="h-6 w-6" /></div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border border-slate-200 dark:border-white/8 bg-white dark:bg-[#131829] shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-slate-500">Risk Coverage</p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">
+                      {loading ? "—" : totalRisk + unratedCount === 0 ? "0%" : `${Math.round((totalRisk / (totalRisk + unratedCount)) * 100)}%`}
+                    </p>
+                    <p className="mt-2 text-sm text-slate-500">Rated of {loading ? "—" : totalRisk + unratedCount} contracts</p>
+                  </div>
+                  <div className="rounded-2xl bg-slate-100 p-3 text-slate-600"><ShieldQuestion className="h-6 w-6" /></div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Risky contracts + expiring risky */}
+          <div className="mt-6 grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
+            <Card className="border border-slate-200 dark:border-white/8 bg-white dark:bg-[#131829] shadow-sm">
+              <CardHeader className="flex flex-row items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="text-lg">Contracts requiring attention</CardTitle>
+                  <p className="mt-1 text-sm text-slate-500">High and medium risk contracts, sorted by severity.</p>
+                </div>
+                {topRiskType && (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 dark:bg-white/4 dark:border-white/8 px-4 py-3 text-right shrink-0">
+                    <p className="text-xs uppercase tracking-widest text-slate-400">Highest risk type</p>
+                    <p className="mt-1 text-base font-semibold text-slate-900 dark:text-white">{topRiskType.type}</p>
+                    <p className="text-xs text-slate-500">{topRiskType.high} high · {topRiskType.medium} medium</p>
+                  </div>
+                )}
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <p className="text-sm text-slate-500">Loading…</p>
+                ) : riskyContracts.length === 0 ? (
+                  <p className="text-sm text-slate-500">No high or medium risk contracts found.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {riskyContracts.slice(0, 8).map(c => (
+                      <Link key={c.id} to={`/contracts/${c.id}`}
+                        className="block rounded-2xl border border-slate-200 dark:border-white/8 p-4 transition hover:bg-slate-50 dark:hover:bg-white/4">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-900 dark:text-white">{c.title}</p>
+                            <p className="mt-0.5 text-sm text-slate-500 truncate">{c.description || "No description."}</p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <Badge className={statusBadgeClass(c.risk_level)}>{formatTypeLabel(c.risk_level)}</Badge>
+                              <Badge className="bg-slate-100 text-slate-700">{formatTypeLabel(c.contract_type)}</Badge>
+                              <Badge className="bg-slate-100 text-slate-700">{formatTypeLabel(c.status)}</Badge>
+                            </div>
+                          </div>
+                          <div className="shrink-0 text-sm text-slate-500 text-right">
+                            <p><span className="font-medium text-slate-900 dark:text-white">Value:</span> {formatCurrency(c.value)}</p>
+                            <p className="mt-1"><span className="font-medium text-slate-900 dark:text-white">End:</span> {formatDate(c.end_date)}</p>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="space-y-6">
+              <Card className="border border-slate-200 dark:border-white/8 bg-white dark:bg-[#131829] shadow-sm">
+                <CardHeader><CardTitle className="text-base">Expiring risky contracts</CardTitle></CardHeader>
+                <CardContent>
+                  {loading ? <p className="text-sm text-slate-500">Loading…</p>
+                    : expiringRisky.length === 0 ? <p className="text-sm text-slate-500">No risky contracts expiring within 90 days.</p>
+                    : (
+                      <div className="space-y-3">
+                        {expiringRisky.map(c => {
+                          const days = Math.ceil((new Date(c.end_date!).getTime() - Date.now()) / 86400000);
+                          return (
+                            <Link key={c.id} to={`/contracts/${c.id}`}
+                              className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 dark:border-white/8 p-3 transition hover:bg-slate-50 dark:hover:bg-white/4">
+                              <div className="min-w-0">
+                                <p className="truncate font-medium text-slate-900 dark:text-white">{c.title}</p>
+                                <p className="mt-0.5 text-xs text-slate-500">{formatDate(c.end_date)}</p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <Badge className={statusBadgeClass(c.risk_level)}>{formatTypeLabel(c.risk_level)}</Badge>
+                                <div className="mt-1.5 flex items-center justify-end gap-1 text-xs text-slate-500">
+                                  <CalendarClock className="h-3.5 w-3.5" />
+                                  <span>{days} days left</span>
+                                </div>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                </CardContent>
+              </Card>
+
+              <Card className="border border-slate-200 dark:border-white/8 bg-white dark:bg-[#131829] shadow-sm">
+                <CardHeader><CardTitle className="text-base">Risk summary</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {[
+                    { label: "Total contracts", value: totalRisk + unratedCount },
+                    { label: "Rated contracts", value: totalRisk },
+                    { label: "Unrated contracts", value: unratedCount },
+                  ].map(row => (
+                    <div key={row.label} className="flex items-center justify-between rounded-2xl bg-slate-50 dark:bg-white/4 px-4 py-3">
+                      <span className="text-sm text-slate-600 dark:text-slate-400">{row.label}</span>
+                      <span className="text-lg font-semibold text-slate-950 dark:text-white">{loading ? "—" : row.value}</span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             </div>
-          </AppCard>
-        </section>
+          </div>
+
+          {/* Risk distribution by type */}
+          <Card className="mt-6 border border-slate-200 dark:border-white/8 bg-white dark:bg-[#131829] shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg">Risk distribution by contract type</CardTitle>
+              <p className="text-sm text-slate-500">Generated from live backend contract records.</p>
+            </CardHeader>
+            <CardContent>
+              {loading ? <p className="text-sm text-slate-500">Loading…</p>
+                : riskByType.length === 0 ? <p className="text-sm text-slate-500">No contract risk data available yet.</p>
+                : (
+                  <div className="space-y-4">
+                    {riskByType.map(item => {
+                      const tot = item.total || 1;
+                      return (
+                        <div key={item.type} className="rounded-2xl border border-slate-200 dark:border-white/8 p-4">
+                          <div className="mb-3 flex items-center justify-between">
+                            <p className="font-medium text-slate-900 dark:text-white">{item.type}</p>
+                            <p className="text-sm text-slate-500">{item.total} contract{item.total === 1 ? "" : "s"}</p>
+                          </div>
+                          <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                            <div className="flex h-full w-full">
+                              <div className="h-full bg-red-400" style={{ width: `${(item.high / tot) * 100}%` }} />
+                              <div className="h-full bg-amber-400" style={{ width: `${(item.medium / tot) * 100}%` }} />
+                              <div className="h-full bg-green-400" style={{ width: `${(item.low / tot) * 100}%` }} />
+                              <div className="h-full bg-slate-300" style={{ width: `${(item.unrated / tot) * 100}%` }} />
+                            </div>
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                            <span className="rounded-full bg-red-50 px-3 py-1 text-red-700">High: {item.high}</span>
+                            <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">Medium: {item.medium}</span>
+                            <span className="rounded-full bg-green-50 px-3 py-1 text-green-700">Low: {item.low}</span>
+                            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">Unrated: {item.unrated}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+            </CardContent>
+          </Card>
+        </section>}
       </div>
     </AppShell>
   );

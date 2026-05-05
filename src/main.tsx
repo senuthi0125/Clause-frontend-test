@@ -14,6 +14,12 @@ if (!PUBLISHABLE_KEY) {
   );
 }
 
+// Apply saved appearance preferences before first render to prevent flash
+const _fs = localStorage.getItem("clause-font-size");
+if (_fs) document.documentElement.dataset.fontSize = _fs;
+const _rx = localStorage.getItem("clause-radius");
+if (_rx) document.documentElement.dataset.radius = _rx;
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/sign-in">

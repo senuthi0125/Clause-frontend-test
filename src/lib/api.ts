@@ -14,6 +14,9 @@ import type {
   DashboardStats,
   DraftResponse,
   LifecycleStats,
+  ReportDefinition,
+  ReportPreset,
+  ReportResult,
   Template,
   TemplatesResponse,
   UserPreferences,
@@ -26,7 +29,7 @@ import type {
 
 const API_BASE_URL =
   (import.meta as ImportMeta & { env?: Record<string, string> }).env
-    ?.VITE_API_BASE_URL || "http://localhost:8000";
+    ?.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 class ApiError extends Error {
   status: number;
@@ -75,8 +78,8 @@ async function resolveToken(): Promise<string | null> {
     try {
       const token = await tokenProvider();
       if (token) return token;
-    } catch (err) {
-      console.warn("Auth token provider failed:", err);
+    } catch {
+      // Fall through to stored token
     }
   }
 
@@ -287,6 +290,11 @@ export const api = {
       `/api/documents/text/${contractId}`
     ),
 
+  getWopiUrl: (contractId: string) =>
+    request<{ editor_url: string; file_type: string; filename: string }>(
+      `/api/documents/wopi-url/${contractId}`
+    ),
+
   saveDocumentText: (contractId: string, text: string) =>
     request<{ message: string; version?: number; file_type?: string }>(
       `/api/documents/text/${contractId}`,
@@ -303,42 +311,7 @@ export const api = {
       body: JSON.stringify({ html, title: title ?? "Contract" }),
     }),
 
-  exportDocument: async (contractId: string, format: "docx" | "pdf", filename: string): Promise<void> => {
-    const token = await (async () => {
-      if (tokenProvider) {
-        try { const t = await tokenProvider(); if (t) return t; } catch {}
-      }
-      if (typeof window !== "undefined") {
-        try { return window.localStorage.getItem("clause_auth_token"); } catch {}
-      }
-      return null;
-    })();
 
-    const response = await fetch(
-      `${API_BASE_URL}/api/documents/export/${contractId}?format=${format}`,
-      {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      }
-    );
-
-    if (!response.ok) {
-      const text = await response.text();
-      let msg = `Export failed (${response.status})`;
-      try { msg = (JSON.parse(text) as { detail?: string }).detail ?? msg; } catch {}
-      throw new Error(msg);
-    }
-
-    const blob = await response.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  },
 
   scanContractConflicts: (contractId: string) =>
     request<ConflictResult>(`/api/ai/conflicts/scan/${contractId}`, {
@@ -392,6 +365,16 @@ export const api = {
     return request<AiChatResponse>("/api/ai/chat", {
       method: "POST",
       body: JSON.stringify(payload),
+    });
+  },
+
+  chatWithFile: (question: string, file: File) => {
+    const form = new FormData();
+    form.append("question", question);
+    form.append("file", file);
+    return request<AiChatResponse>("/api/ai/chat-file", {
+      method: "POST",
+      body: form,
     });
   },
 
@@ -520,6 +503,20 @@ export const api = {
       { method: "POST" }
     ),
 
+  getNotificationSettings: () =>
+    request<Record<string, unknown>>("/api/notifications/settings"),
+
+  saveNotificationSettings: (body: Record<string, unknown>) =>
+    request<{ message: string }>("/api/notifications/settings", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
+  bootstrapAdmin: () =>
+    request<{ message: string; user: Record<string, unknown> }>("/api/auth/bootstrap-admin", {
+      method: "POST",
+    }),
+
   // ── Lifecycle stats ───────────────────────────────────────────────────────
   getLifecycleStats: () =>
     request<LifecycleStats>("/api/contracts/lifecycle-stats"),
@@ -565,6 +562,38 @@ export const api = {
     request<{ message: string }>(`/api/workflows/templates/${id}`, {
       method: "DELETE",
     }),
+  // ── Reports ─────────────────────────────────────────────────────────────────
+  runReport: (definition: ReportDefinition) =>
+    request<ReportResult>("/api/reports/run", {
+      method: "POST",
+      body: JSON.stringify(definition),
+    }),
+
+  getReportPresets: () => request<ReportPreset[]>("/api/reports/presets"),
+
+  downloadReportBlob: async (
+    definition: ReportDefinition,
+    format: "csv" | "pdf",
+    title = "CLAUSE Report"
+  ): Promise<{ blob: Blob; filename: string }> => {
+    const token = await resolveToken();
+    const res = await fetch(`${API_BASE_URL}/api/reports/export`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ definition, format, title }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new ApiError(`Export failed (${res.status})`, res.status, text);
+    }
+    const disposition = res.headers.get("content-disposition") ?? "";
+    const match = disposition.match(/filename=([^\s;]+)/);
+    const filename = match?.[1] ?? `report.${format}`;
+    return { blob: await res.blob(), filename };
+  },
 
   listAuditLogs: (
     params: {

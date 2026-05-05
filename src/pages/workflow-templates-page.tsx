@@ -16,6 +16,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { formatLabel as fmt } from "@/lib/utils";
 import type { WorkflowTemplate, WorkflowTemplateStep } from "@/types/api";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -36,10 +37,6 @@ function stepTypeColor(type: string) {
 function stepTypeLabel(type: string) {
   return STEP_TYPES.find((t) => t.value === type)?.label ?? type;
 }
-function fmt(v: string) {
-  return v.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 // ── Empty step factory ────────────────────────────────────────────────────────
 
 const emptyStep = (n: number): WorkflowTemplateStep => ({
@@ -312,7 +309,7 @@ const DEFAULT_STEPS = [
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default function WorkflowTemplatesPage() {
+export function WorkflowTemplatesContent() {
   const [templates, setTemplates]   = useState<WorkflowTemplate[]>([]);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState<string | null>(null);
@@ -371,17 +368,14 @@ export default function WorkflowTemplatesPage() {
   const cancelForm = () => { setShowForm(false); setEditing(null); };
 
   return (
-    <AppShell
-      title="Workflow Templates"
-      subtitle="Define reusable step sequences that can be applied when starting a workflow on any contract."
-      actions={
-        !showForm ? (
+    <>
+      <div className="mb-4 flex justify-end">
+        {!showForm && (
           <Button onClick={() => setShowForm(true)} className="h-9 rounded-lg text-[13px]">
             <Plus className="mr-1.5 h-3.5 w-3.5" /> New template
           </Button>
-        ) : undefined
-      }
-    >
+        )}
+      </div>
       {error && (
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           <AlertTriangle className="h-4 w-4 shrink-0" /> {error}
@@ -466,6 +460,14 @@ export default function WorkflowTemplatesPage() {
           </div>
         )}
       </div>
+    </>
+  );
+}
+
+export default function WorkflowTemplatesPage() {
+  return (
+    <AppShell title="Workflow Templates" subtitle="Define reusable step sequences that can be applied when starting a workflow on any contract.">
+      <WorkflowTemplatesContent />
     </AppShell>
   );
 }
