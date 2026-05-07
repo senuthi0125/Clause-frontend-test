@@ -63,9 +63,8 @@ function DocumentPanel({ contractId, contractTitle }: { contractId: string; cont
   const viewUrl = `${API_BASE_URL}/api/documents/view/${contractId}`;
 
   const loadWopiUrl = useCallback(async () => {
-    if (wopiUrl || wopiLoading) return;
+    if (wopiUrl || wopiLoading || wopiError) return;
     setWopiLoading(true);
-    setWopiError(null);
     try {
       const data = await api.getWopiUrl(contractId);
       setWopiUrl(data.editor_url);
@@ -74,7 +73,7 @@ function DocumentPanel({ contractId, contractTitle }: { contractId: string; cont
     } finally {
       setWopiLoading(false);
     }
-  }, [contractId, wopiUrl, wopiLoading]);
+  }, [contractId, wopiUrl, wopiLoading, wopiError]);
 
   useEffect(() => {
     let cancelled = false;
