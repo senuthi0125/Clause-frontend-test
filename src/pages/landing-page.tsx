@@ -100,9 +100,7 @@ function Navbar() {
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25">
-            <FileText className="h-4 w-4" />
-          </div>
+          <img src="/clause-logo.jpeg" alt="Clause" className="h-9 w-9 rounded-xl object-contain" />
           <div>
             <p className="text-[17px] font-bold tracking-tight text-slate-900">
               Clause
@@ -822,9 +820,7 @@ function Footer() {
     <footer className="border-t border-slate-200/70 bg-white py-12">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 sm:flex-row">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
-            <FileText className="h-3.5 w-3.5" />
-          </div>
+          <img src="/clause-logo.jpeg" alt="Clause" className="h-7 w-7 rounded-lg object-contain" />
           <span className="text-[15px] font-semibold text-slate-800">
             Clause
           </span>
