@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Filter, RefreshCw } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
-import { AppCard } from "@/components/ui/app-card";
-import { AppInput } from "@/components/ui/app-input";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { formatDateTime } from "@/lib/utils";
