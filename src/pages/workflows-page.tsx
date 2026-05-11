@@ -420,6 +420,7 @@ export function WorkflowsContent({ adminView = false }: { adminView?: boolean })
           const steps = Array.isArray(workflow.steps) ? workflow.steps : [];
           const total = steps.length;
           const current = workflow.current_step ?? 0;
+          const isDone = workflow.status === "completed" || current > total;
           const progress = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
 
           return (
@@ -439,8 +440,10 @@ export function WorkflowsContent({ adminView = false }: { adminView?: boolean })
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Badge className={badgeClass(workflow.status)}>{formatLabel(workflow.status)}</Badge>
-                    <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
-                      Step {current}/{total}
+                    <Badge className={isDone
+                      ? "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300"
+                      : "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300"}>
+                      {isDone ? `All ${total} steps done` : `Step ${current}/${total}`}
                     </Badge>
                   </div>
                 </div>

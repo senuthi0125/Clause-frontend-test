@@ -324,7 +324,7 @@ export default function AdminOverviewPage() {
     {
       title: "Pending Approvals",
       value: pendingApprovals,
-      helper: `${totalApprovals} total`,
+      helper: "Awaiting stakeholder action",
       icon: CheckCircle2,
       iconWrap:
         "bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20",
@@ -361,7 +361,7 @@ export default function AdminOverviewPage() {
             return (
               <Card
                 key={card.title}
-                className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+                className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white dark:bg-white/5 dark:border-white/10 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
               >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-4">
@@ -371,7 +371,7 @@ export default function AdminOverviewPage() {
                       </p>
 
                       <div className="flex items-end gap-2">
-                        <h3 className="text-4xl font-semibold tracking-tight text-slate-900">
+                        <h3 className="text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">
                           {loading ? "..." : card.value}
                         </h3>
                         <span
@@ -397,7 +397,7 @@ export default function AdminOverviewPage() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.05fr_1.35fr]">
-          <Card className="rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+          <Card className="rounded-3xl border border-slate-200/80 bg-white dark:bg-white/5 dark:border-white/10 shadow-sm">
             <CardContent className="p-6">
               <div className="mb-6">
                 <div className="mb-2 flex items-center gap-2">
@@ -406,7 +406,7 @@ export default function AdminOverviewPage() {
                     System value
                   </span>
                 </div>
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
                   Contract value
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
@@ -415,37 +415,37 @@ export default function AdminOverviewPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4">
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 dark:bg-white/5 dark:border-white/10 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm text-slate-600">Total value</span>
-                    <span className="text-2xl font-semibold text-slate-950">
+                    <span className="text-2xl font-semibold text-slate-950 dark:text-white">
                       {loading ? "..." : formatCurrency(contractValueSummary.total)}
                     </span>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4">
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 dark:bg-white/5 dark:border-white/10 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm text-slate-600">Average</span>
-                    <span className="text-2xl font-semibold text-slate-950">
+                    <span className="text-2xl font-semibold text-slate-950 dark:text-white">
                       {loading ? "..." : formatCurrency(contractValueSummary.average)}
                     </span>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4">
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 dark:bg-white/5 dark:border-white/10 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm text-slate-600">Largest</span>
-                    <span className="text-2xl font-semibold text-slate-950">
+                    <span className="text-2xl font-semibold text-slate-950 dark:text-white">
                       {loading ? "..." : formatCurrency(contractValueSummary.largest)}
                     </span>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4">
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 dark:bg-white/5 dark:border-white/10 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm text-slate-600">System users</span>
-                    <span className="text-2xl font-semibold text-slate-950">
+                    <span className="text-2xl font-semibold text-slate-950 dark:text-white">
                       {loading ? "..." : totalUsers}
                     </span>
                   </div>
@@ -457,7 +457,7 @@ export default function AdminOverviewPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+          <Card className="rounded-3xl border border-slate-200/80 bg-white dark:bg-white/5 dark:border-white/10 shadow-sm">
             <CardContent className="p-6">
               <div className="mb-6 flex items-start justify-between gap-4">
                 <div>
@@ -467,7 +467,7 @@ export default function AdminOverviewPage() {
                       Status snapshot
                     </span>
                   </div>
-                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
                     Contracts by workflow stage
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
@@ -476,11 +476,11 @@ export default function AdminOverviewPage() {
                 </div>
 
                 {largestStage ? (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right">
+                  <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-4 py-3 text-right">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
                       Largest segment
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
                       {largestStage.label}
                     </p>
                     <p className="text-xs text-slate-500">
@@ -507,11 +507,11 @@ export default function AdminOverviewPage() {
                     return (
                       <div
                         key={stage.label}
-                        className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4"
+                        className="rounded-2xl border border-slate-200/80 bg-slate-50/70 dark:bg-white/5 dark:border-white/10 p-4"
                       >
                         <div className="mb-3 flex items-center justify-between gap-3">
                           <div>
-                            <p className="font-medium text-slate-900">
+                            <p className="font-medium text-slate-900 dark:text-white">
                               {stage.label}
                             </p>
                           </div>
@@ -537,10 +537,10 @@ export default function AdminOverviewPage() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          <Card className="rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+          <Card className="rounded-3xl border border-slate-200/80 bg-white dark:bg-white/5 dark:border-white/10 shadow-sm">
             <CardContent className="p-6">
               <div className="mb-6">
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
                   Value by contract type
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
@@ -561,18 +561,18 @@ export default function AdminOverviewPage() {
                   {normalizedValueByType.map((item) => (
                     <div
                       key={item.type}
-                      className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4"
+                      className="rounded-2xl border border-slate-200 bg-slate-50/70 dark:bg-white/5 dark:border-white/10 px-4 py-4"
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div>
-                          <p className="text-base font-medium text-slate-950">
+                          <p className="text-base font-medium text-slate-950 dark:text-white">
                             {item.type}
                           </p>
                           <p className="text-xs text-slate-500">
                             {item.count} contract{item.count === 1 ? "" : "s"}
                           </p>
                         </div>
-                        <p className="text-lg font-semibold text-slate-950">
+                        <p className="text-lg font-semibold text-slate-950 dark:text-white">
                           {formatCurrency(item.totalValue)}
                         </p>
                       </div>
@@ -583,10 +583,10 @@ export default function AdminOverviewPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+          <Card className="rounded-3xl border border-slate-200/80 bg-white dark:bg-white/5 dark:border-white/10 shadow-sm">
             <CardContent className="p-6">
               <div className="mb-6">
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
                   Approvals breakdown
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
@@ -614,10 +614,10 @@ export default function AdminOverviewPage() {
                     return (
                       <div key={item.label}>
                         <div className="mb-2 flex items-center justify-between gap-3">
-                          <span className="text-sm text-slate-700">
+                          <span className="text-sm text-slate-700 dark:text-slate-300">
                             {item.label}
                           </span>
-                          <span className="text-lg font-semibold text-slate-950">
+                          <span className="text-lg font-semibold text-slate-950 dark:text-white">
                             {item.count}
                           </span>
                         </div>
@@ -638,11 +638,11 @@ export default function AdminOverviewPage() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          <Card className="rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+          <Card className="rounded-3xl border border-slate-200/80 bg-white dark:bg-white/5 dark:border-white/10 shadow-sm">
             <CardContent className="p-6">
               <div className="mb-6 flex items-center gap-2">
                 <Shield className="h-4 w-4 text-slate-700" />
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
                   Recent users
                 </h2>
               </div>
@@ -660,11 +660,11 @@ export default function AdminOverviewPage() {
                   {recentUsers.map((user, index) => (
                     <div
                       key={user.id || index}
-                      className="rounded-2xl border border-slate-200 bg-white px-4 py-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm"
+                      className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-4 transition-all duration-200 hover:border-slate-300 dark:hover:border-white/20 hover:shadow-sm"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="text-base font-medium text-slate-950">
+                          <p className="text-base font-medium text-slate-950 dark:text-white">
                             {user.full_name || user.name || "Unnamed user"}
                           </p>
                           <p className="mt-1 text-xs text-slate-500">
@@ -688,11 +688,11 @@ export default function AdminOverviewPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+          <Card className="rounded-3xl border border-slate-200/80 bg-white dark:bg-white/5 dark:border-white/10 shadow-sm">
             <CardContent className="p-6">
               <div className="mb-6 flex items-center gap-2">
                 <Activity className="h-4 w-4 text-slate-700" />
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
                   Recent system activity
                 </h2>
               </div>
@@ -706,15 +706,15 @@ export default function AdminOverviewPage() {
                   No recent activity found.
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-4 overflow-y-auto pr-1" style={{ maxHeight: "420px" }}>
                   {userActivity.map((item, index) => (
                     <div
                       key={item.id || index}
-                      className="rounded-2xl border border-slate-200 bg-white px-4 py-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm"
+                      className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-4 transition-all duration-200 hover:border-slate-300 dark:hover:border-white/20 hover:shadow-sm"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="text-base font-medium text-slate-950">
+                          <p className="text-base font-medium text-slate-950 dark:text-white">
                             {item.title ||
                               `${formatLabel(item.action)} · ${formatLabel(
                                 item.resource_type

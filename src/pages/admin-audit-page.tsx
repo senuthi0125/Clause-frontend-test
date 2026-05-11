@@ -129,7 +129,7 @@ export function AdminAuditContent() {
         </div>
       ) : null}
 
-      <Card className="mb-4 border border-slate-200 bg-white shadow-sm">
+      <Card className="mb-4 border border-slate-200 bg-white shadow-sm dark:bg-white/5 dark:border-white/10">
         <CardContent className="p-5">
         <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
           <Filter className="h-4 w-4" />
@@ -176,7 +176,7 @@ export function AdminAuditContent() {
         </CardContent>
       </Card>
 
-      <Card className="border border-slate-200 bg-white shadow-sm">
+      <Card className="border border-slate-200 bg-white shadow-sm dark:bg-white/5 dark:border-white/10">
         <CardContent className="p-5">
           <div className="mb-3 flex items-center justify-between gap-4 text-sm">
             <p className="text-slate-500">
@@ -186,15 +186,15 @@ export function AdminAuditContent() {
             </p>
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs text-slate-400">Rows per page</span>
-              <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+              <div className="flex rounded-lg border border-slate-200 overflow-hidden dark:border-white/10">
                 {[10, 25, 50, 100].map((n) => (
                   <button
                     key={n}
                     onClick={() => handlePerPageChange(n)}
                     className={`px-2.5 py-1 text-xs font-medium transition-colors ${
                       perPage === n
-                        ? "bg-slate-900 text-white"
-                        : "bg-white text-slate-600 hover:bg-slate-50"
+                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                        : "bg-white text-slate-600 hover:bg-slate-50 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
                     }`}
                   >
                     {n}
@@ -207,7 +207,7 @@ export function AdminAuditContent() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[820px] text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 dark:border-white/10">
                   <th className="py-2 pr-4">Time</th>
                   <th className="py-2 pr-4">Action</th>
                   <th className="py-2 pr-4">Resource</th>
@@ -229,9 +229,9 @@ export function AdminAuditContent() {
                 {(data?.logs ?? []).map((log) => (
                   <tr
                     key={log.id}
-                    className="border-b border-slate-100 last:border-b-0 align-top"
+                    className="border-b border-slate-100 last:border-b-0 align-top dark:border-white/10"
                   >
-                    <td className="whitespace-nowrap py-3 pr-4 text-slate-600">
+                    <td className="whitespace-nowrap py-3 pr-4 text-slate-600 dark:text-slate-400">
                       {formatDateTime(log.created_at)}
                     </td>
                     <td className="py-3 pr-4">
@@ -239,7 +239,7 @@ export function AdminAuditContent() {
                         {log.action}
                       </Badge>
                     </td>
-                    <td className="py-3 pr-4 text-slate-700">
+                    <td className="py-3 pr-4 text-slate-700 dark:text-slate-300">
                       <p>{log.resource_type}</p>
                       {log.resource_id ? (
                         <p className="text-xs text-slate-400">
@@ -247,10 +247,10 @@ export function AdminAuditContent() {
                         </p>
                       ) : null}
                     </td>
-                    <td className="py-3 pr-4 text-slate-600">
+                    <td className="py-3 pr-4 text-slate-600 dark:text-slate-400">
                       {log.user_email ?? log.user_id ?? "—"}
                     </td>
-                    <td className="py-3 pr-4 text-slate-600">
+                    <td className="py-3 pr-4 text-slate-600 dark:text-slate-400">
                       {log.details ?? "—"}
                     </td>
                   </tr>

@@ -11,7 +11,9 @@ import {
   Clock,
   FileSearch,
   Loader2,
+  PauseCircle,
   PenLine,
+  PlayCircle,
   SkipForward,
   ThumbsDown,
   ThumbsUp,
@@ -19,6 +21,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useRole } from "@/hooks/use-role";
+import { useResolveUser } from "@/hooks/use-resolve-user";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -136,6 +139,7 @@ function StepRow({ step, isCurrent, isLast }: { step: WorkflowStep; isCurrent: b
 export default function WorkflowDetailPage() {
   const { id } = useParams();
   const { isAdminOrManager: canManage } = useRole();
+  const resolveUser = useResolveUser();
 
   const [workflow, setWorkflow]   = useState<Workflow | null>(null);
   const [contract, setContract]   = useState<Contract | null>(null);
@@ -170,18 +174,26 @@ export default function WorkflowDetailPage() {
   const steps = useMemo(() => workflow?.steps ?? [], [workflow]);
   const totalSteps = steps.length;
   const currentStep = workflow?.current_step ?? 0;
+  const isWorkflowCompleted = workflow?.status === "completed" || currentStep > totalSteps;
   const progress = totalSteps > 0 ? Math.min(100, Math.round((currentStep / totalSteps) * 100)) : 0;
 
-  const act = async (action: "advance" | "reject") => {
+  const act = async (action: "advance" | "reject" | "pause" | "resume") => {
     if (!id) return;
     setActing(true);
     setError(null);
     setActionMsg(null);
     try {
       if (action === "advance") await api.advanceWorkflow(id, note);
-      else await api.rejectWorkflow(id, note || "Rejected");
+      else if (action === "reject") await api.rejectWorkflow(id, note || "Rejected");
+      else if (action === "pause") await api.pauseWorkflow(id, note || undefined);
+      else await api.resumeWorkflow(id);
       setNote("");
-      setActionMsg(action === "advance" ? "Step advanced." : "Step rejected.");
+      setActionMsg(
+        action === "advance" ? "Step advanced." :
+        action === "reject"  ? "Step rejected." :
+        action === "pause"   ? "Workflow paused." :
+                               "Workflow resumed."
+      );
       await load();
     } catch {
       setError(`Failed to ${action} workflow.`);
@@ -243,8 +255,10 @@ export default function WorkflowDetailPage() {
                     <Badge className={badgeClass(workflow.status)}>
                       {formatLabel(workflow.status)}
                     </Badge>
-                    <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
-                      Step {currentStep} / {totalSteps}
+                    <Badge className={isWorkflowCompleted
+                      ? "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300"
+                      : "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300"}>
+                      {isWorkflowCompleted ? `All ${totalSteps} steps done` : `Step ${currentStep} / ${totalSteps}`}
                     </Badge>
                   </div>
                 </div>
@@ -279,7 +293,7 @@ export default function WorkflowDetailPage() {
                   )}
                   {workflow.created_by && (
                     <span className="flex items-center gap-1.5">
-                      <User className="h-3.5 w-3.5" /> {workflow.created_by}
+                      <User className="h-3.5 w-3.5" /> {resolveUser(workflow.created_by)}
                     </span>
                   )}
                 </div>
@@ -341,7 +355,7 @@ export default function WorkflowDetailPage() {
                   <div className="flex gap-3">
                     <Button
                       onClick={() => act("advance")}
-                      disabled={acting || workflow.status === "completed" || workflow.status === "cancelled"}
+                      disabled={acting || workflow.status !== "active"}
                       className="flex-1 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white hover:opacity-90 disabled:opacity-50"
                     >
                       {acting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsUp className="mr-2 h-4 w-4" />}
@@ -350,13 +364,35 @@ export default function WorkflowDetailPage() {
                     <Button
                       variant="outline"
                       onClick={() => act("reject")}
-                      disabled={acting || workflow.status === "completed" || workflow.status === "cancelled"}
+                      disabled={acting || workflow.status !== "active"}
                       className="flex-1 rounded-xl border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
                     >
                       {acting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
                       Reject
                     </Button>
                   </div>
+
+                  {(workflow.status === "active" || workflow.status === "paused") && (
+                    <Button
+                      variant="outline"
+                      onClick={() => act(workflow.status === "paused" ? "resume" : "pause")}
+                      disabled={acting}
+                      className={`w-full rounded-xl disabled:opacity-50 ${
+                        workflow.status === "paused"
+                          ? "border-green-200 text-green-700 hover:bg-green-50 dark:border-green-500/30 dark:text-green-400 dark:hover:bg-green-500/10"
+                          : "border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-500/10"
+                      }`}
+                    >
+                      {acting ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : workflow.status === "paused" ? (
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                      ) : (
+                        <PauseCircle className="mr-2 h-4 w-4" />
+                      )}
+                      {workflow.status === "paused" ? "Resume Workflow" : "Pause Workflow"}
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ) : (
@@ -366,8 +402,10 @@ export default function WorkflowDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Currently at step <span className="font-semibold text-slate-900 dark:text-white">{currentStep}</span> of{" "}
-                    <span className="font-semibold text-slate-900 dark:text-white">{totalSteps}</span>. An admin or manager will review and advance the workflow.
+                    {isWorkflowCompleted
+                      ? <>All <span className="font-semibold text-slate-900 dark:text-white">{totalSteps}</span> steps have been completed. This workflow is finished.</>
+                      : <>Currently at step <span className="font-semibold text-slate-900 dark:text-white">{currentStep}</span> of{" "}
+                        <span className="font-semibold text-slate-900 dark:text-white">{totalSteps}</span>. An admin or manager will review and advance the workflow.</>}
                   </p>
                 </CardContent>
               </Card>
@@ -403,7 +441,7 @@ export default function WorkflowDetailPage() {
                           <div className="mt-2 flex flex-wrap gap-1">
                             {ap.approvers.map((a) => (
                               <span key={a.user_id} className="rounded-lg bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                                {a.user_id}
+                                {resolveUser(a.user_id)}
                                 {a.decision && ` · ${formatLabel(a.decision)}`}
                               </span>
                             ))}

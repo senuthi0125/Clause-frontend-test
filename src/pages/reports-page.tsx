@@ -314,9 +314,9 @@ export function ReportsContent() {
               <button
                 key={preset.id}
                 onClick={() => handlePresetClick(preset)}
-                className="flex min-w-[190px] max-w-[210px] shrink-0 flex-col gap-1.5 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-blue-300 hover:bg-blue-50 hover:shadow"
+                className="flex min-w-[190px] max-w-[210px] shrink-0 flex-col gap-1.5 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-4 text-left shadow-sm transition hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:shadow"
               >
-                <p className="text-sm font-semibold text-slate-900 leading-snug">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white leading-snug">
                   {preset.name}
                 </p>
                 <p className="text-xs text-slate-500 leading-relaxed">
@@ -329,7 +329,7 @@ export function ReportsContent() {
       </div>
 
       {/* Builder */}
-      <Card className="mb-6 border border-slate-200 bg-white shadow-sm">
+      <Card className="mb-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
         <CardHeader>
           <CardTitle>Report Builder</CardTitle>
           <p className="text-sm text-slate-500">
@@ -341,7 +341,7 @@ export function ReportsContent() {
           <div className="grid gap-6 md:grid-cols-2">
             {/* Dimensions */}
             <div>
-              <p className="mb-3 text-sm font-medium text-slate-700">
+              <p className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-300">
                 Group by
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -356,10 +356,10 @@ export function ReportsContent() {
                       className={cn(
                         "rounded-xl border px-3 py-2 text-left text-sm transition",
                         selected
-                          ? "border-blue-500 bg-blue-50 font-medium text-blue-700"
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10 font-medium text-blue-700"
                           : maxed
-                          ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"
+                          ? "cursor-not-allowed border-slate-100 bg-slate-50 dark:bg-white/5 text-slate-300"
+                          : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/10"
                       )}
                     >
                       {opt.label}
@@ -371,7 +371,7 @@ export function ReportsContent() {
 
             {/* Measures */}
             <div>
-              <p className="mb-3 text-sm font-medium text-slate-700">
+              <p className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-300">
                 Calculate
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -384,8 +384,8 @@ export function ReportsContent() {
                       className={cn(
                         "rounded-xl border px-3 py-2 text-left text-sm transition",
                         selected
-                          ? "border-purple-500 bg-purple-50 font-medium text-purple-700"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-purple-300 hover:bg-purple-50"
+                          ? "border-purple-500 bg-purple-50 dark:bg-purple-500/10 font-medium text-purple-700"
+                          : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-500/10"
                       )}
                     >
                       {opt.label}
@@ -399,7 +399,7 @@ export function ReportsContent() {
           {/* Chart type + action buttons */}
           <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-medium text-slate-700">Visualise:</p>
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Visualise:</p>
               {CHART_TYPES.map((ct) => (
                 <button
                   key={ct.value}
@@ -408,7 +408,7 @@ export function ReportsContent() {
                     "rounded-lg border px-3 py-1.5 text-sm transition",
                     chartType === ct.value
                       ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                      : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10"
                   )}
                 >
                   {ct.label}

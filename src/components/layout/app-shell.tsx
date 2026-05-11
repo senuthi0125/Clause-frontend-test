@@ -163,7 +163,7 @@ export function AppShell({
         to={item.href}
         onClick={onClick}
         className={cn(
-          "group flex items-center gap-3 rounded-2xl px-3.5 py-3 text-[13.5px] font-medium transition-all duration-200",
+          "group flex items-center gap-3 rounded-2xl px-3.5 py-3.5 text-[13.5px] font-medium transition-all duration-200",
           isActive
             ? "bg-white/18 text-white shadow-lg"
             : "text-white/75 hover:bg-white/10 hover:text-white"
@@ -190,7 +190,7 @@ export function AppShell({
 
       <div className="my-4 h-px w-14 bg-white/15" />
 
-      <nav className="flex min-h-0 flex-1 flex-col items-center gap-1 overflow-y-auto px-2 pb-3">
+      <nav className="flex min-h-0 flex-1 flex-col items-center gap-3 overflow-y-auto px-2 pb-3">
         {mainNavigation.map((item) => (
           <DesktopNavLink key={item.href} item={item} />
         ))}
@@ -223,7 +223,7 @@ export function AppShell({
             Main menu
           </p>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2">
           {mainNavigation.map((item) => (
             <MobileNavLink
               key={item.href}

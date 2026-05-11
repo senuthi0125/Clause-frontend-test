@@ -145,14 +145,17 @@ export function buildContractsQuery(
 export const api = {
   health: () => request<{ status: string; database: string }>("/health"),
 
-  syncUser: () =>
+  syncUser: (profile?: { full_name?: string; email?: string }) =>
     request<{
       id?: string;
       email?: string;
       full_name?: string;
       role?: string;
       status?: string;
-    }>("/api/auth/sync", { method: "POST" }),
+    }>("/api/auth/sync", {
+      method: "POST",
+      body: profile ? JSON.stringify(profile) : undefined,
+    }),
 
   getMyProfile: () =>
     request<{
@@ -265,6 +268,15 @@ export const api = {
       body: JSON.stringify({ reason }),
     }),
 
+  pauseWorkflow: (id: string, reason?: string) =>
+    request<Workflow>(`/api/workflows/${id}/pause`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
+
+  resumeWorkflow: (id: string) =>
+    request<Workflow>(`/api/workflows/${id}/resume`, { method: "POST" }),
+
   getApprovalsByContract: (contractId: string) =>
     request<ApprovalListResponse>(`/api/approvals/contract/${contractId}`),
 
@@ -293,6 +305,12 @@ export const api = {
   getWopiUrl: (contractId: string) =>
     request<{ editor_url: string; file_type: string; filename: string }>(
       `/api/documents/wopi-url/${contractId}`
+    ),
+
+  generateDocumentFromTemplate: (contractId: string) =>
+    request<{ message: string; version: number; filename: string; file_type: string }>(
+      `/api/documents/generate-from-template/${contractId}`,
+      { method: "POST" }
     ),
 
   saveDocumentText: (contractId: string, text: string) =>
@@ -340,6 +358,15 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ contract_ids: contractIds }),
     }),
+
+  scanForDuplicates: (contractId: string) =>
+    request<ConflictResult>(`/api/ai/conflicts/scan/${contractId}`, { method: "POST" }),
+
+  addVersion: (contractId: string, fromContractId: string, changeNotes: string) =>
+    request<{ message: string; version_number: number; contract_id: string }>(
+      `/api/contracts/${contractId}/add-version`,
+      { method: "POST", body: JSON.stringify({ from_contract_id: fromContractId, change_notes: changeNotes }) }
+    ),
 
   chat: (
     questionOrPayload: string | ChatRequestPayload,

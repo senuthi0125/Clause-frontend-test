@@ -96,31 +96,31 @@ function TemplateForm({
   const valid = form.name.trim() && form.steps.length > 0 && form.steps.every((s) => s.name.trim());
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h3 className="mb-5 text-[15px] font-semibold text-slate-900">
+    <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-6 shadow-sm">
+      <h3 className="mb-5 text-[15px] font-semibold text-slate-900 dark:text-white">
         {initial ? "Edit template" : "New workflow template"}
       </h3>
 
       {/* Name & description */}
       <div className="mb-5 grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600">
+          <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">
             Template name <span className="text-rose-500">*</span>
           </label>
           <input
             value={form.name}
             onChange={(e) => setField("name", e.target.value)}
             placeholder="e.g. Fast-track NDA"
-            className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-indigo-300"
+            className="h-10 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-3 text-sm outline-none focus:border-indigo-300"
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600">Description</label>
+          <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">Description</label>
           <input
             value={form.description}
             onChange={(e) => setField("description", e.target.value)}
             placeholder="Optional short description"
-            className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-indigo-300"
+            className="h-10 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-3 text-sm outline-none focus:border-indigo-300"
           />
         </div>
       </div>
@@ -132,14 +132,14 @@ function TemplateForm({
             Steps ({form.steps.length})
           </p>
           <button onClick={addStep}
-            className="flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1 text-[12.5px] font-medium text-indigo-600 hover:bg-indigo-100">
+            className="flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1 text-[12.5px] font-medium text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:bg-indigo-500/25">
             <Plus className="h-3.5 w-3.5" /> Add step
           </button>
         </div>
 
         <div className="space-y-2">
           {form.steps.map((step, i) => (
-            <div key={i} className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div key={i} className="flex items-start gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
               {/* Grip / order */}
               <div className="flex shrink-0 flex-col items-center gap-0.5 pt-1">
                 <GripVertical className="h-4 w-4 text-slate-300" />
@@ -152,13 +152,13 @@ function TemplateForm({
                   value={step.name}
                   onChange={(e) => setStep(i, "name", e.target.value)}
                   placeholder="Step name *"
-                  className="h-9 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-[13px] outline-none focus:border-indigo-300"
+                  className="h-9 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-[13px] outline-none focus:border-indigo-300 dark:border-white/10 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
                 />
                 {/* Type dropdown */}
                 <select
                   value={step.step_type}
                   onChange={(e) => setStep(i, "step_type", e.target.value as StepTypeValue)}
-                  className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-[13px] outline-none focus:border-indigo-300"
+                  className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-[13px] outline-none focus:border-indigo-300 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                 >
                   {STEP_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -169,7 +169,7 @@ function TemplateForm({
                   value={step.description ?? ""}
                   onChange={(e) => setStep(i, "description", e.target.value)}
                   placeholder="Description (optional)"
-                  className="h-9 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-[13px] outline-none focus:border-indigo-300"
+                  className="h-9 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-[13px] outline-none focus:border-indigo-300 dark:border-white/10 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
                 />
               </div>
 
@@ -194,7 +194,7 @@ function TemplateForm({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 border-t border-slate-100 pt-4">
+      <div className="flex items-center gap-2 border-t border-slate-100 pt-4 dark:border-white/10">
         <Button onClick={() => onSave(form)} disabled={!valid || saving} className="h-9 rounded-lg text-[13px]">
           {saving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <CheckCheck className="mr-1.5 h-3.5 w-3.5" />}
           {initial ? "Save changes" : "Create template"}
@@ -221,14 +221,14 @@ function TemplateCard({
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
       <div className="flex items-start justify-between gap-3 p-5">
         <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-500/10">
             <Layers className="h-4 w-4 text-indigo-500" />
           </div>
           <div>
-            <h3 className="text-[15px] font-semibold text-slate-900">{template.name}</h3>
+            <h3 className="text-[15px] font-semibold text-slate-900 dark:text-white">{template.name}</h3>
             {template.description && (
               <p className="mt-0.5 text-[13px] text-slate-500">{template.description}</p>
             )}
@@ -250,7 +250,7 @@ function TemplateCard({
         <div className="flex shrink-0 items-center gap-1.5">
           <span className="text-[12px] text-slate-400">{template.steps.length} steps</span>
           <button onClick={() => setExpanded((e) => !e)}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100">
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10">
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
           {isAdminOrManager && (
@@ -269,15 +269,15 @@ function TemplateCard({
       </div>
 
       {expanded && (
-        <div className="border-t border-slate-100 px-5 pb-5 pt-4">
+        <div className="border-t border-slate-100 px-5 pb-5 pt-4 dark:border-white/10">
           <p className="mb-3 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">All steps</p>
           <ol className="space-y-2">
             {template.steps.map((step) => (
               <li key={step.step_number} className="flex items-center gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500 dark:bg-white/10 dark:text-slate-400">
                   {step.step_number}
                 </span>
-                <span className="flex-1 text-[13px] font-medium text-slate-700">{step.name}</span>
+                <span className="flex-1 text-[13px] font-medium text-slate-700 dark:text-slate-300">{step.name}</span>
                 <Badge className={`text-[11px] ${stepTypeColor(step.step_type)}`}>
                   {stepTypeLabel(step.step_type)}
                 </Badge>
@@ -399,15 +399,15 @@ export function WorkflowTemplatesContent() {
         <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
           System default
         </p>
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-white/10 dark:bg-white/5">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
-              <Workflow className="h-4 w-4 text-slate-500" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm dark:bg-white/10">
+              <Workflow className="h-4 w-4 text-slate-500 dark:text-slate-400" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <h3 className="text-[15px] font-semibold text-slate-800">Standard Contract Workflow</h3>
-                <Badge className="bg-slate-200 text-[11px] text-slate-600">built-in</Badge>
+                <h3 className="text-[15px] font-semibold text-slate-800 dark:text-white">Standard Contract Workflow</h3>
+                <Badge className="bg-slate-200 text-[11px] text-slate-600 dark:bg-white/10 dark:text-slate-400">built-in</Badge>
               </div>
               <p className="mt-0.5 text-[13px] text-slate-500">
                 Full 9-step lifecycle — used when no custom template is selected.
@@ -436,7 +436,7 @@ export function WorkflowTemplatesContent() {
             <Loader2 className="h-4 w-4 animate-spin" /> Loading templates…
           </div>
         ) : templates.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-white py-14 text-center">
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-white py-14 text-center dark:border-white/10 dark:bg-white/5">
             <Layers className="h-8 w-8 text-slate-300" />
             <p className="text-sm font-medium text-slate-500">No custom templates yet</p>
             <p className="text-xs text-slate-400">

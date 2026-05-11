@@ -149,19 +149,19 @@ function Navbar() {
 function MockDashboardCard() {
   const items = [
     {
-      title: "Vendor Agreement — Acme Corp",
+      title: "Vendor Agreement",
       status: "Active",
       risk: "Low",
       tagClass: "bg-emerald-50 text-emerald-600",
     },
     {
-      title: "Strategic Partnership — InnovateCo",
+      title: "Strategic Partnership",
       status: "Review",
       risk: "Medium",
       tagClass: "bg-amber-50 text-amber-700",
     },
     {
-      title: "SaaS Licensing — CloudBase",
+      title: "SaaS Licensing",
       status: "Approval",
       risk: "High",
       tagClass: "bg-rose-50 text-rose-600",
@@ -278,9 +278,6 @@ function HeroSection() {
 
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 px-6 lg:grid-cols-2">
         <div className="space-y-8">
-          <Badge className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-indigo-700 hover:bg-indigo-50"> 
-            Contract Lifecycle Management System
-          </Badge>
 
           <div className="space-y-4">
             <h1 className="text-5xl font-bold leading-[1.05] tracking-tight text-slate-900 lg:text-6xl xl:text-7xl">
@@ -291,8 +288,8 @@ function HeroSection() {
             </h1>
 
             <p className="max-w-xl text-lg leading-relaxed text-slate-500">
-              Draft, Analyze, Compare, Approve, and Track Contracts in one
-              platform built for growing teams.
+              Draft, Analyze, Compare, and Track Contracts in one
+              platform built for all teams.
             </p>
           </div>
 
@@ -316,7 +313,7 @@ function HeroSection() {
 
           <div className="flex items-center gap-4">
             <div className="flex -space-x-2">
-              {["A", "L", "J", "R", "S"].map((char, i) => (
+              {["A", "S", "T", "S", "M"].map((char, i) => (
                 <div
                   key={char}
                   className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-xs font-semibold text-white ${
@@ -344,7 +341,7 @@ function HeroSection() {
                 ))}
               </div>
               <p className="text-sm text-slate-500">
-                Trusted by Legal, Operations, and Business Teams
+                Trusted by Small to Medium Scale IT Businesses
               </p>
             </div>
           </div>
@@ -371,7 +368,7 @@ function HeroSection() {
               <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" />
             </div>
             <p className="mt-2 text-[11px] text-slate-400">
-              Low risk · ready for review
+              Low risk · Ready for review
             </p>
           </div>
 
@@ -523,12 +520,12 @@ function BenefitsSection() {
     {
       icon: SearchCheck,
       title: "Reduce Surprises",
-      desc: "Spot risky clauses and hidden conflicts before they slow down execution.",
+      desc: "Spot risky clauses and hidden conflicts between contracts before they slow down execution.",
     },
     {
       icon: BarChart3,
       title: "Improve Visibility",
-      desc: "See pipeline health, approvals, and risk signals across your contract repository.",
+      desc: "See contract status, approvals, and risk score across your contracts.",
     },
     {
       icon: Clock3,
@@ -625,11 +622,8 @@ function HowItWorksSection() {
             inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
           }`}
         >
-          <Badge className="mb-4 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-blue-100 hover:bg-white/10">
-            Simple workflow
-          </Badge>
           <h2 className="text-4xl font-bold tracking-tight text-white lg:text-5xl">
-            From draft to decision
+            From Draft to Decision
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-blue-100/70">
             A clear process that helps contracts move without confusion.
@@ -706,7 +700,7 @@ function TestimonialsSection() {
           }`}
         >
           <h2 className="text-3xl font-bold tracking-tight text-slate-900 lg:text-4xl">
-            Built for teams that handle contracts every day
+            Built for Teams that Handle Contracts Everyday
           </h2>
         </div>
 
@@ -770,16 +764,12 @@ function CTASection() {
 
           <div className="relative space-y-6">
             <div className="flex justify-center">
-              <Badge className="rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm text-blue-100 hover:bg-white/10">
-                <Lock className="mr-1.5 h-3.5 w-3.5" />
-                Secure access with Clerk authentication
-              </Badge>
             </div>
 
             <h2 className="text-4xl font-bold tracking-tight text-white md:text-5xl">
               Ready to Manage Contracts
               <br className="hidden md:block" />
-              in One Place?
+               in One Place?
             </h2>
 
             <p className="mx-auto max-w-lg text-lg text-blue-100/70">
@@ -804,10 +794,6 @@ function CTASection() {
                 </Button>
               </Link>
             </div>
-
-            <p className="text-sm text-blue-100/40">
-              No credit card required · Get started in minutes
-            </p>
           </div>
         </div>
       </div>
