@@ -156,8 +156,8 @@ function buildTrendData(activity: ActivityItem[]) {
 
     days.push({
       day: label,
-      contracts: count || Math.floor(Math.random() * 3),
-      risk: Math.floor(Math.random() * 40 + 30),
+      contracts: count,
+      risk: 0,
     });
   }
 
@@ -240,7 +240,7 @@ function PinnedContractsSection({
           >
             <Link
               to={`/contracts/${contract.id}`}
-              className="flex items-center gap-2 text-sm font-semibold text-slate-900 transition-colors"
+              className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white transition-colors"
               onMouseEnter={(e) => (e.currentTarget.style.color = t.text)}
               onMouseLeave={(e) => (e.currentTarget.style.color = "")}
             >
@@ -849,7 +849,7 @@ export default function DashboardPage() {
                           style={{ backgroundColor: item.color }}
                         />
                         <div>
-                          <p className="text-sm font-medium text-slate-900">
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">
                             {item.label}
                           </p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">

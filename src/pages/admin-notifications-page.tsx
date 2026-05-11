@@ -651,9 +651,9 @@ export function AdminNotificationsContent() {
               <div className="space-y-2">
                 {expiringSoon.map((item) => (
                   <Link key={item.id} to={`/contracts/${item.id}`}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3 hover:bg-slate-50 transition-colors">
+                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-slate-900">{item.title}</p>
+                      <p className="truncate font-medium text-slate-900 dark:text-white">{item.title}</p>
                       <p className="text-xs text-slate-500">{fmt(item.contract_type)}</p>
                     </div>
                     <Badge className={`shrink-0 text-xs ${
@@ -688,9 +688,9 @@ export function AdminNotificationsContent() {
               <div className="space-y-2">
                 {highRiskContracts.map((contract) => (
                   <Link key={contract.id} to={`/contracts/${contract.id}`}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3 hover:bg-slate-50 transition-colors">
+                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-slate-900">{contract.title}</p>
+                      <p className="truncate font-medium text-slate-900 dark:text-white">{contract.title}</p>
                       <p className="mt-0.5 text-xs text-slate-500 truncate">{contract.description || "No description."}</p>
                     </div>
                     <Badge className={`shrink-0 ${badgeClass(contract.risk_level)}`}>{fmt(contract.risk_level)}</Badge>
@@ -717,9 +717,9 @@ export function AdminNotificationsContent() {
             <div className="space-y-2">
               {recentActivity.map((item) => (
                 <Link key={item.id} to={`/contracts/${item.id}`}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 p-3 hover:bg-slate-50 transition-colors">
+                  className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 p-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                   <div className="min-w-0">
-                    <p className="font-medium text-slate-900 truncate">{item.title}</p>
+                    <p className="font-medium text-slate-900 dark:text-white truncate">{item.title}</p>
                     <p className="text-xs text-slate-500 mt-0.5">{fmt(item.status)} · {fmt(item.workflow_stage)}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 text-slate-400">

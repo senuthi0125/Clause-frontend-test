@@ -36,12 +36,15 @@ export function ChatPopup() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [fileError, setFileError]     = useState<string | null>(null);
 
-  const bottomRef  = useRef<HTMLDivElement | null>(null);
-  const fileRef    = useRef<HTMLInputElement | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const bottomRef    = useRef<HTMLDivElement | null>(null);
+  const fileRef      = useRef<HTMLInputElement | null>(null);
+  const textareaRef  = useRef<HTMLTextAreaElement | null>(null);
+  const messagesRef  = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (open && messagesRef.current) {
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    }
   }, [messages, open]);
 
   useEffect(() => {
@@ -140,7 +143,7 @@ export function ChatPopup() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0F1320]" style={{ maxHeight: "calc(100vh - 7rem)" }}>
+        <div className="fixed bottom-24 right-6 z-50 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0F1320]" style={{ height: "min(520px, calc(100vh - 7rem))" }}>
           {/* Header */}
           <div className="flex items-center gap-3 border-b border-slate-200 bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 dark:border-white/10">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20">
@@ -166,7 +169,7 @@ export function ChatPopup() {
           </div>
 
           {/* Messages */}
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
+          <div ref={messagesRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
             {messages.map((msg) => {
               const isUser = msg.role === "user";
               return (
@@ -232,7 +235,7 @@ export function ChatPopup() {
             <div className="flex items-end gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-white/10 dark:bg-white/6">
               <textarea
                 ref={textareaRef}
-                className="min-h-[36px] flex-1 resize-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 dark:text-slate-200"
+                className="min-h-[36px] max-h-[120px] flex-1 resize-none overflow-y-auto bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 dark:text-slate-200"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}

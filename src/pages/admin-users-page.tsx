@@ -167,7 +167,7 @@ export function AdminUsersContent() {
         </div>
       )}
 
-      <Card className="border border-slate-200 bg-white shadow-sm">
+      <Card className="border border-slate-200 bg-white shadow-sm dark:bg-white/5 dark:border-white/10">
         <CardContent className="p-6">
           <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="relative w-full max-w-md">
@@ -176,7 +176,7 @@ export function AdminUsersContent() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by name, email, or role"
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm outline-none"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm outline-none dark:border-white/10 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
               />
             </div>
 
@@ -191,7 +191,7 @@ export function AdminUsersContent() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[980px] border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 text-left">
+                  <tr className="border-b border-slate-200 text-left dark:border-white/10">
                     <th colSpan={2} className="pb-4 text-xs font-semibold uppercase tracking-wider text-slate-400">
                       User
                     </th>
@@ -221,7 +221,7 @@ export function AdminUsersContent() {
                     return (
                     <tr
                       key={user.id}
-                      className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/60 transition-colors"
+                      className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/60 transition-colors dark:border-white/10 dark:hover:bg-white/5"
                     >
                       {/* Identity: avatar + name + email */}
                       <td className="py-4 pr-4" colSpan={2}>
@@ -240,7 +240,7 @@ export function AdminUsersContent() {
                           )}
                           {/* Name + email stacked */}
                           <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 truncate">
+                            <p className="font-semibold text-slate-900 dark:text-white truncate">
                               {user.full_name || <span className="italic text-slate-400 font-normal">No name</span>}
                             </p>
                             <p className="text-sm text-slate-500 truncate">
@@ -262,7 +262,7 @@ export function AdminUsersContent() {
                         </Badge>
                       </td>
 
-                      <td className="py-4 pr-4 text-sm text-slate-600">
+                      <td className="py-4 pr-4 text-sm text-slate-600 dark:text-slate-400">
                         {formatDate(user.created_at)}
                       </td>
 
@@ -274,7 +274,7 @@ export function AdminUsersContent() {
                               changeRole(user.id, e.target.value as UserRole)
                             }
                             disabled={busyUserId === user.id}
-                            className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-violet-400 disabled:opacity-50"
+                            className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-violet-400 disabled:opacity-50 dark:border-white/10 dark:bg-slate-800 dark:text-white"
                           >
                             <option value="user">User</option>
                             <option value="viewer">Viewer</option>

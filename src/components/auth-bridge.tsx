@@ -36,7 +36,10 @@ export function AuthBridge() {
     if (!isLoaded || !isSignedIn || syncedRef.current) return;
     syncedRef.current = true;
 
-    api.syncUser()
+    api.syncUser({
+        full_name: user?.fullName ?? undefined,
+        email: user?.primaryEmailAddress?.emailAddress ?? undefined,
+      })
       .then(() => {
         // Force Clerk to re-fetch the user profile so publicMetadata.role
         // (set by the backend via Clerk Management API) is available immediately.

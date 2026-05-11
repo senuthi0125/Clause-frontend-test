@@ -49,6 +49,10 @@ const inputLabel = "flex flex-col gap-1.5 text-sm font-medium text-slate-700 dar
 const selectClass = "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white";
 const textareaClass = "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white min-h-[80px] resize-y";
 
+function toFieldLabel(name: string) {
+  return name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function CreateContractPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -60,6 +64,7 @@ export default function CreateContractPage() {
     blankParty(),
   ]);
   const [template, setTemplate] = useState<Template | null>(null);
+  const [templateValues, setTemplateValues] = useState<Record<string, string>>({});
   const [loadingTemplate, setLoadingTemplate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -75,6 +80,12 @@ export default function CreateContractPage() {
       try {
         const data = await api.getTemplate(templateId);
         setTemplate(data);
+
+        const defaults: Record<string, string> = {};
+        for (const field of data.fields || []) {
+          defaults[field.field_name] = field.default_value ?? "";
+        }
+        setTemplateValues(defaults);
 
         setForm((prev) => ({
           ...prev,
@@ -146,19 +157,24 @@ export default function CreateContractPage() {
               .filter(Boolean)
           : [],
         template_id: template?.id || null,
+        template_values: Object.keys(templateValues).length
+          ? Object.fromEntries(
+              Object.entries(templateValues).filter(([, v]) => v.trim())
+            )
+          : null,
       };
 
       const createdContract = await api.createContract(payload);
 
-      const workflow = await api.createWorkflow({
+      await api.createWorkflow({
         contract_id: createdContract.id,
         name: `${createdContract.title} workflow`,
       });
 
-      setMessage("Contract created and workflow started successfully.");
+      setMessage("Contract created successfully. Opening document...");
       setTimeout(() => {
-        navigate(`/workflows/${workflow.id}`);
-      }, 800);
+        navigate(`/contracts/${createdContract.id}`);
+      }, 600);
     } catch {
       setError("Failed to create contract.");
     } finally {
@@ -184,149 +200,93 @@ export default function CreateContractPage() {
         </div>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-        <AppCard tone="soft">
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-              Contract Details
-            </h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Add the main information required to create the contract record.
-            </p>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className={inputLabel}>
-              <span>Title</span>
-              <AppInput
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="Enter contract title"
-                className="h-11"
-              />
-            </label>
-
-            <label className={inputLabel}>
-              <span>Type</span>
-              <select
-                className={selectClass}
-                value={form.contract_type}
-                onChange={(e) =>
-                  setForm({ ...form, contract_type: e.target.value })
-                }
-              >
-                <option value="service_agreement">Service Agreement</option>
-                <option value="nda">NDA</option>
-                <option value="employment">Employment</option>
-                <option value="vendor">Vendor</option>
-                <option value="licensing">Licensing</option>
-                <option value="partnership">Partnership</option>
-                <option value="other">Other</option>
-              </select>
-            </label>
-
-            <label className={`${inputLabel} md:col-span-2`}>
-              <span>Description</span>
-              <textarea
-                className={textareaClass}
-                value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
-                placeholder="Briefly describe the purpose of this contract"
-              />
-            </label>
-
-            <label className={inputLabel}>
-              <span>Start Date</span>
-              <AppInput
-                type="date"
-                value={form.start_date}
-                onChange={(e) =>
-                  setForm({ ...form, start_date: e.target.value })
-                }
-                className="h-11"
-              />
-            </label>
-
-            <label className={inputLabel}>
-              <span>End Date</span>
-              <AppInput
-                type="date"
-                value={form.end_date}
-                onChange={(e) =>
-                  setForm({ ...form, end_date: e.target.value })
-                }
-                className="h-11"
-              />
-            </label>
-
-            <label className={inputLabel}>
-              <span>Contract Value</span>
-              <AppInput
-                type="number"
-                value={form.value}
-                onChange={(e) => setForm({ ...form, value: e.target.value })}
-                placeholder="0"
-                className="h-11"
-              />
-            </label>
-
-            <label className={inputLabel}>
-              <span>Approval Type</span>
-              <select
-                className={selectClass}
-                value={form.approval_type}
-                onChange={(e) =>
-                  setForm({ ...form, approval_type: e.target.value })
-                }
-              >
-                <option value="all_required">All Required</option>
-                <option value="majority">Majority</option>
-                <option value="first_person">First Person</option>
-              </select>
-            </label>
-
-            <label className={`${inputLabel} md:col-span-2`}>
-              <span>Payment Terms</span>
-              <AppInput
-                value={form.payment_terms}
-                onChange={(e) =>
-                  setForm({ ...form, payment_terms: e.target.value })
-                }
-                placeholder="Example: Net 30, monthly payment, milestone based"
-                className="h-11"
-              />
-            </label>
-
-            <label className={inputLabel}>
-              <span>Workflow Trigger</span>
-              <select
-                className={selectClass}
-                value={form.workflow_trigger}
-                onChange={(e) =>
-                  setForm({ ...form, workflow_trigger: e.target.value })
-                }
-              >
-                <option value="creation">On Creation</option>
-                <option value="modification">On Modification</option>
-                <option value="renewal">On Renewal</option>
-              </select>
-            </label>
-
-            <label className={inputLabel}>
-              <span>Tags</span>
-              <AppInput
-                value={form.tags}
-                onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                placeholder="security, vendor, renewal"
-                className="h-11"
-              />
-            </label>
-          </div>
-        </AppCard>
-
+      <div className="grid items-start gap-5 xl:grid-cols-[1fr_1fr]">
+        {/* ── Left column: contract info + template fields ── */}
         <div className="space-y-5">
+          <AppCard tone="soft">
+            <div className="mb-5">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Basic Information</h2>
+              <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Title, type and description of the contract.</p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className={inputLabel}>
+                <span>Title</span>
+                <AppInput value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Enter contract title" className="h-11" />
+              </label>
+              <label className={inputLabel}>
+                <span>Type</span>
+                <select className={selectClass} value={form.contract_type} onChange={(e) => setForm({ ...form, contract_type: e.target.value })}>
+                  <option value="service_agreement">Service Agreement</option>
+                  <option value="nda">NDA</option>
+                  <option value="employment">Employment</option>
+                  <option value="vendor">Vendor</option>
+                  <option value="licensing">Licensing</option>
+                  <option value="partnership">Partnership</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+              <label className={`${inputLabel} sm:col-span-2`}>
+                <span>Description</span>
+                <textarea className={textareaClass} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Briefly describe the purpose of this contract" />
+              </label>
+            </div>
+          </AppCard>
+
+          <AppCard tone="soft">
+            <div className="mb-5">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Dates & Financials</h2>
+              <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Contract duration and financial terms.</p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className={inputLabel}>
+                <span>Start Date</span>
+                <AppInput type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} className="h-11" />
+              </label>
+              <label className={inputLabel}>
+                <span>End Date</span>
+                <AppInput type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} className="h-11" />
+              </label>
+              <label className={inputLabel}>
+                <span>Contract Value</span>
+                <AppInput type="number" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} placeholder="0" className="h-11" />
+              </label>
+              <label className={inputLabel}>
+                <span>Payment Terms</span>
+                <AppInput value={form.payment_terms} onChange={(e) => setForm({ ...form, payment_terms: e.target.value })} placeholder="Net 30, milestone…" className="h-11" />
+              </label>
+            </div>
+          </AppCard>
+
+          {template && template.fields && template.fields.length > 0 && (
+            <AppCard tone="soft">
+              <div className="mb-5">
+                <h2 className="text-base font-semibold text-slate-900 dark:text-white">Template Fields</h2>
+                <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+                  Required fields for <span className="font-medium text-violet-600 dark:text-violet-300">{template.name}</span>.
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {template.fields.map((field) => {
+                  const isTextArea = field.field_type === "text" && (field.field_name.includes("description") || field.field_name.includes("purpose"));
+                  return (
+                    <label key={field.field_name} className={isTextArea ? `${inputLabel} sm:col-span-2` : inputLabel}>
+                      <span>{toFieldLabel(field.field_name)}{field.required && <span className="ml-1 text-red-500">*</span>}</span>
+                      {isTextArea ? (
+                        <textarea className={textareaClass} value={templateValues[field.field_name] ?? ""} onChange={(e) => setTemplateValues((prev) => ({ ...prev, [field.field_name]: e.target.value }))} placeholder={field.default_value ? `Default: ${field.default_value}` : `Enter ${toFieldLabel(field.field_name).toLowerCase()}`} />
+                      ) : (
+                        <AppInput type={field.field_type === "date" ? "date" : field.field_type === "number" ? "number" : "text"} value={templateValues[field.field_name] ?? ""} onChange={(e) => setTemplateValues((prev) => ({ ...prev, [field.field_name]: e.target.value }))} placeholder={field.default_value ? `Default: ${field.default_value}` : `Enter ${toFieldLabel(field.field_name).toLowerCase()}`} className="h-11" />
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </AppCard>
+          )}
+        </div>
+
+        {/* ── Right column: parties + settings + submit ── */}
+        <div className="space-y-5">
+
           <AppCard tone="soft">
             <div className="mb-6 flex items-center justify-between gap-3">
               <div>
@@ -413,65 +373,48 @@ export default function CreateContractPage() {
           </AppCard>
 
           <AppCard tone="soft">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">
-                <FileText className="h-5 w-5" />
-              </div>
-
-              <div>
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-                  {loadingTemplate
-                    ? "Loading Template..."
-                    : template
-                    ? "Template Linked"
-                    : "No Template Selected"}
-                </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {template
-                    ? "This contract will be created using the selected template."
-                    : "Create from scratch or use a template later."}
-                </p>
-              </div>
+            <div className="mb-5">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Workflow Settings</h2>
+              <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Configure approval and automation behaviour.</p>
             </div>
-
-            {template ? (
-              <div className="space-y-3 rounded-2xl border border-violet-100 bg-white/70 p-4 text-sm text-slate-600 dark:border-violet-500/20 dark:bg-white/5 dark:text-slate-300">
-                <p className="font-semibold text-slate-900 dark:text-white">
-                  {template.name}
-                </p>
-                <p>{template.description || "No description provided."}</p>
-                <div className="flex items-center justify-between rounded-xl bg-violet-50 px-3 py-2 dark:bg-violet-500/10">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Fields available
-                  </span>
-                  <AppBadge variant="violet">
-                    {template.fields?.length || 0}
-                  </AppBadge>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-violet-100 bg-white/60 px-4 py-6 text-center dark:border-violet-500/20 dark:bg-white/5">
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  You can create a contract from scratch or use a template.
-                </p>
-              </div>
-            )}
-
-            <Button
-              className="mt-5 h-11 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-sm hover:opacity-90"
-              onClick={submit}
-              disabled={saving || !form.title || !form.start_date || !form.end_date}
-            >
-              {saving ? (
-                "Saving..."
-              ) : (
-                <>
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Create Contract and Workflow
-                </>
-              )}
-            </Button>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className={inputLabel}>
+                <span>Approval Type</span>
+                <select className={selectClass} value={form.approval_type} onChange={(e) => setForm({ ...form, approval_type: e.target.value })}>
+                  <option value="all_required">All Required</option>
+                  <option value="majority">Majority</option>
+                  <option value="first_person">First Person</option>
+                </select>
+              </label>
+              <label className={inputLabel}>
+                <span>Workflow Trigger</span>
+                <select className={selectClass} value={form.workflow_trigger} onChange={(e) => setForm({ ...form, workflow_trigger: e.target.value })}>
+                  <option value="creation">On Creation</option>
+                  <option value="modification">On Modification</option>
+                  <option value="renewal">On Renewal</option>
+                </select>
+              </label>
+              <label className={`${inputLabel} sm:col-span-2`}>
+                <span>Tags</span>
+                <AppInput value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="security, vendor, renewal" className="h-11" />
+              </label>
+            </div>
           </AppCard>
+
+          <Button
+            className="h-11 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-sm hover:opacity-90"
+            onClick={submit}
+            disabled={saving || !form.title || !form.start_date || !form.end_date}
+          >
+            {saving ? (
+              "Saving..."
+            ) : (
+              <>
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Create Contract and Workflow
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </AppShell>

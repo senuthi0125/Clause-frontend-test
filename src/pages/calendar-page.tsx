@@ -349,51 +349,47 @@ export default function CalendarPage() {
       )}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        {[
-          {
-            label: "Total Events",
-            value: loading ? "—" : contractEvents.length,
-            icon: <CalendarDays className="h-5 w-5 text-violet-500" />,
-            cardBg:
-              "bg-violet-50 border-violet-100 dark:bg-violet-500/10 dark:border-violet-500/20",
-            valueClass: "text-violet-700 dark:text-violet-300",
-          },
-          {
-            label: "Upcoming (30d)",
-            value: loading ? "—" : upcoming.length,
-            icon: <Clock className="h-5 w-5 text-blue-500" />,
-            cardBg:
-              "bg-blue-50 border-blue-100 dark:bg-blue-500/10 dark:border-blue-500/20",
-            valueClass: "text-blue-700 dark:text-blue-300",
-          },
-          {
-            label: "Expiring (30d)",
-            value: loading ? "—" : expiringThisMonth,
-            icon: <AlertTriangle className="h-5 w-5 text-red-500" />,
-            cardBg:
-              "bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20",
-            valueClass: "text-rose-700 dark:text-rose-300",
-          },
-        ].map(({ label, value, icon, cardBg, valueClass }) => (
-          <div
-            key={label}
-            className={`rounded-3xl border p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${cardBg}`}
-          >
-            <div className="flex items-center gap-4">
-              <div className="rounded-2xl bg-white/80 p-2.5 shadow-sm dark:bg-white/10">
-                {icon}
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-slate-400">
-                  {label}
-                </p>
-                <p className={`mt-0.5 text-2xl font-bold ${valueClass}`}>
-                  {value}
-                </p>
-              </div>
+        <div className="rounded-3xl border border-violet-100 bg-violet-50 dark:border-violet-500/20 dark:bg-violet-500/10 p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+          <div className="flex items-center gap-4">
+            <div className="rounded-2xl bg-white/80 dark:bg-white/10 p-2.5 shadow-sm">
+              <CalendarDays className="h-5 w-5 text-violet-500" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-slate-400">Total Events</p>
+              <p className="mt-0.5 text-2xl font-bold text-violet-700 dark:text-violet-300">
+                {loading ? "—" : contractEvents.length}
+              </p>
             </div>
           </div>
-        ))}
+        </div>
+
+        <div className="rounded-3xl border border-blue-100 bg-blue-50 dark:border-blue-500/20 dark:bg-blue-500/10 p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+          <div className="flex items-center gap-4">
+            <div className="rounded-2xl bg-white/80 dark:bg-white/10 p-2.5 shadow-sm">
+              <Clock className="h-5 w-5 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-slate-400">Upcoming (30d)</p>
+              <p className="mt-0.5 text-2xl font-bold text-blue-700 dark:text-blue-300">
+                {loading ? "—" : upcoming.length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-rose-100 bg-rose-50 dark:border-rose-500/20 dark:bg-rose-500/10 p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+          <div className="flex items-center gap-4">
+            <div className="rounded-2xl bg-white/80 dark:bg-white/10 p-2.5 shadow-sm">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-slate-400">Expiring (30d)</p>
+              <p className="mt-0.5 text-2xl font-bold text-rose-700 dark:text-rose-300">
+                {loading ? "—" : expiringThisMonth}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">

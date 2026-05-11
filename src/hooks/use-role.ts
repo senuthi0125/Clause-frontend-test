@@ -36,6 +36,12 @@ export function useRole() {
   useEffect(() => {
     if (!isLoaded || !user) return;
 
+    // Sync name/email on first load so "Uploaded by" shows username not clerk_id
+    api.syncUser({
+      full_name: user.fullName ?? undefined,
+      email: user.primaryEmailAddress?.emailAddress ?? undefined,
+    }).catch(() => {});
+
     const fetchRole = () => {
       api
         .getMyProfile()
