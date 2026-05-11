@@ -76,9 +76,8 @@ function DocumentPanel({
   const viewUrl = `${API_BASE_URL}/api/documents/view/${contractId}`;
 
   const loadWopiUrl = useCallback(async () => {
-    if (wopiUrl || wopiLoading) return;
+    if (wopiUrl || wopiLoading || wopiError) return;
     setWopiLoading(true);
-    setWopiError(null);
     try {
       const data = await api.getWopiUrl(contractId);
       setWopiUrl(data.editor_url);
@@ -87,7 +86,7 @@ function DocumentPanel({
     } finally {
       setWopiLoading(false);
     }
-  }, [contractId, wopiUrl, wopiLoading]);
+  }, [contractId, wopiUrl, wopiLoading, wopiError]);
 
   // Poll the document text endpoint while AI is generating the DOCX
   useEffect(() => {
