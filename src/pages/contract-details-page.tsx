@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   ArrowLeft,
   Bot,
@@ -9,6 +11,7 @@ import {
   Download,
   FileEdit,
   FileText,
+  History,
   Layers,
   Loader2,
   Plus,
@@ -29,6 +32,7 @@ import {
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/use-role";
+import { useResolveUser } from "@/hooks/use-resolve-user";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,13 +56,22 @@ const STEP_LABELS: Record<number, string> = {
 
 // ─── Document viewer / editor ────────────────────────────────────────────────
 
-function DocumentPanel({ contractId, contractTitle }: { contractId: string; contractTitle?: string }) {
+function DocumentPanel({
+  contractId,
+  contractTitle,
+  initialDocumentStatus,
+}: {
+  contractId: string;
+  contractTitle?: string;
+  initialDocumentStatus?: string | null;
+}) {
   const [fileType, setFileType] = useState("");
   const [hasFile, setHasFile] = useState(false);
   const [loading, setLoading] = useState(true);
   const [wopiUrl, setWopiUrl] = useState<string | null>(null);
   const [wopiLoading, setWopiLoading] = useState(false);
   const [wopiError, setWopiError] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(initialDocumentStatus === "generating");
 
   const viewUrl = `${API_BASE_URL}/api/documents/view/${contractId}`;
 
@@ -76,7 +89,32 @@ function DocumentPanel({ contractId, contractTitle }: { contractId: string; cont
     }
   }, [contractId, wopiUrl, wopiLoading]);
 
+  // Poll the document text endpoint while AI is generating the DOCX
   useEffect(() => {
+    if (!generating) return;
+    let stopped = false;
+    const poll = async () => {
+      while (!stopped) {
+        await new Promise((r) => setTimeout(r, 4000));
+        if (stopped) break;
+        try {
+          const r = await api.getDocumentText(contractId);
+          if (r.has_file) {
+            setHasFile(true);
+            setFileType(r.file_type || "");
+            setGenerating(false);
+            setLoading(false);
+            break;
+          }
+        } catch { /* ignore */ }
+      }
+    };
+    poll();
+    return () => { stopped = true; };
+  }, [generating, contractId]);
+
+  useEffect(() => {
+    if (generating) return; // wait for polling to resolve
     let cancelled = false;
     setLoading(true);
     api.getDocumentText(contractId)
@@ -88,7 +126,7 @@ function DocumentPanel({ contractId, contractTitle }: { contractId: string; cont
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [contractId]);
+  }, [contractId, generating]);
 
   useEffect(() => {
     if (hasFile) loadWopiUrl();
@@ -101,17 +139,25 @@ function DocumentPanel({ contractId, contractTitle }: { contractId: string; cont
     a.click();
   }
 
+  if (generating) return (
+    <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-indigo-100 bg-indigo-50/50 py-20 text-center dark:border-indigo-500/20 dark:bg-indigo-500/5">
+      <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+      <p className="font-semibold text-slate-700 dark:text-slate-200">Generating document with AI…</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400">This usually takes 20–40 seconds. The editor will open automatically.</p>
+    </div>
+  );
+
   if (loading) return (
-    <div className="flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-16">
+    <div className="flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-16 dark:border-white/10 dark:bg-white/5">
       <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
       <span className="text-sm text-slate-500">Loading document…</span>
     </div>
   );
 
   if (!hasFile) return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-14 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-14 text-center dark:border-white/10 dark:bg-white/5">
       <FileText className="h-10 w-10 text-slate-300" />
-      <p className="font-medium text-slate-600">No document file attached yet</p>
+      <p className="font-medium text-slate-600 dark:text-slate-300">No document file attached yet</p>
       <p className="text-sm text-slate-400">
         Upload a file from the{" "}
         <Link to="/contracts" className="text-blue-500 underline hover:text-blue-600">
@@ -123,18 +169,18 @@ function DocumentPanel({ contractId, contractTitle }: { contractId: string; cont
   );
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#131829]">
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2">
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+      <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2 dark:border-white/10 dark:bg-white/5">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
           <FileEdit className="h-4 w-4 text-indigo-500" />
           LibreOffice Editor
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={handleDownload} className="h-8 rounded-xl">
+          <Button size="sm" variant="outline" onClick={handleDownload} className="h-8 rounded-xl dark:border-white/10 dark:text-white dark:hover:bg-white/10">
             <Download className="mr-1.5 h-3.5 w-3.5" /> Download
           </Button>
-          <Badge className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-600">
+          <Badge className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-600 dark:bg-white/10 dark:text-slate-300">
             {fileType || "file"}
           </Badge>
         </div>
@@ -153,7 +199,7 @@ function DocumentPanel({ contractId, contractTitle }: { contractId: string; cont
             <p className="text-sm font-medium text-red-600">{wopiError}</p>
             <button
               onClick={() => { setWopiUrl(null); setWopiError(null); loadWopiUrl(); }}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
             >
               Retry
             </button>
@@ -207,9 +253,9 @@ function SendApprovalPanel({
   }
 
   return (
-    <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 space-y-4">
+    <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 space-y-4 dark:border-blue-500/30 dark:bg-blue-500/10">
       <div className="flex items-center justify-between">
-        <p className="font-semibold text-blue-900 flex items-center gap-2">
+        <p className="font-semibold text-blue-900 flex items-center gap-2 dark:text-blue-200">
           <Send className="h-4 w-4" /> Send for Approval
         </p>
         <button onClick={onClose} className="text-blue-400 hover:text-blue-600"><X className="h-4 w-4" /></button>
@@ -225,7 +271,7 @@ function SendApprovalPanel({
           <select
             value={approvalType}
             onChange={(e) => setApprovalType(e.target.value)}
-            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
           >
             <option value="all_required">All Required — everyone must approve</option>
             <option value="majority">Majority — more than half must approve</option>
@@ -242,7 +288,7 @@ function SendApprovalPanel({
             value={approverInput}
             onChange={(e) => setApproverInput(e.target.value)}
             placeholder="user_abc123, user_def456 — leave blank for admin to decide"
-            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 dark:border-white/10 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
           />
         </div>
       </div>
@@ -285,12 +331,12 @@ function WorkflowTemplatePicker({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white dark:bg-[#131829] shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 px-6 py-4">
           <div className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-indigo-500" />
-            <h2 className="font-semibold text-slate-900">Choose Workflow Template</h2>
+            <h2 className="font-semibold text-slate-900 dark:text-white">Choose Workflow Template</h2>
           </div>
           <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
             <X className="h-4 w-4" />
@@ -304,14 +350,14 @@ function WorkflowTemplatePicker({
             onClick={() => setSelected("default")}
             className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-all ${selected === "default"
                 ? "border-indigo-500 bg-indigo-50"
-                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-white/10"
               }`}
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-100">
               <Workflow className="h-4 w-4 text-indigo-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-slate-900">Default (9 steps)</p>
+              <p className="font-medium text-slate-900 dark:text-white">Default (9 steps)</p>
               <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">{DEFAULT_STEP_DESCRIPTION}</p>
             </div>
             {selected === "default" && (
@@ -338,26 +384,26 @@ function WorkflowTemplatePicker({
                 onClick={() => setSelected(t.id)}
                 className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-all ${selected === t.id
                     ? "border-indigo-500 bg-indigo-50"
-                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20 dark:hover:bg-white/10"
                   }`}
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100">
-                  <Layers className="h-4 w-4 text-violet-600" />
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-500/20">
+                  <Layers className="h-4 w-4 text-violet-600 dark:text-violet-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-900">{t.name}</p>
+                  <p className="font-medium text-slate-900 dark:text-white">{t.name}</p>
                   <p className="mt-0.5 text-xs text-slate-500">
                     {t.steps.length} steps
                     {t.description ? ` — ${t.description}` : ""}
                   </p>
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {t.steps.slice(0, 5).map((s, i) => (
-                      <span key={i} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                      <span key={i} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 dark:bg-white/10 dark:text-slate-300">
                         {s.name}
                       </span>
                     ))}
                     {t.steps.length > 5 && (
-                      <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-400">
+                      <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-400 dark:bg-white/10">
                         +{t.steps.length - 5} more
                       </span>
                     )}
@@ -372,7 +418,7 @@ function WorkflowTemplatePicker({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4">
+        <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4 dark:border-white/10">
           <p className="text-xs text-slate-400">
             {selected === "default"
               ? "9-step standard workflow will be used"
@@ -443,7 +489,7 @@ function WorkflowCard({
         />
       )}
 
-      <Card className="rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <Card className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Workflow className="h-5 w-5 text-slate-500" /> Workflow
@@ -473,25 +519,39 @@ function WorkflowCard({
           ) : (
             <>
               {/* Status + step indicator */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-slate-800">{latest.name || "Review Workflow"}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    Step {latest.current_step} of {latest.steps?.length ?? 9}
-                  </p>
-                </div>
-                <Badge className={badgeClass(latest.status)}>{fmt(latest.status)}</Badge>
-              </div>
+              {(() => {
+                const totalSteps = latest.steps?.length ?? 9;
+                const isCompleted = latest.status === "completed" || latest.current_step > totalSteps;
+                return (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-white">{latest.name || "Review Workflow"}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {isCompleted
+                            ? `All ${totalSteps} steps completed`
+                            : `Step ${latest.current_step} of ${totalSteps}`}
+                        </p>
+                      </div>
+                      <Badge className={badgeClass(latest.status)}>{fmt(latest.status)}</Badge>
+                    </div>
 
-              {/* Current step name */}
-              <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Current Step</p>
-                <p className="mt-0.5 text-sm font-semibold text-slate-800">
-                  {latest.steps?.find((s) => s.step_number === latest.current_step)?.name
-                    ?? STEP_LABELS[latest.current_step]
-                    ?? `Step ${latest.current_step}`}
-                </p>
-              </div>
+                    {/* Current step name */}
+                    <div className={`rounded-xl border px-3 py-2 ${isCompleted ? "border-green-100 bg-green-50 dark:border-green-500/30 dark:bg-green-500/10" : "border-slate-100 bg-slate-50 dark:border-white/10 dark:bg-white/5"}`}>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        {isCompleted ? "Status" : "Current Step"}
+                      </p>
+                      <p className={`mt-0.5 text-sm font-semibold ${isCompleted ? "text-green-700 dark:text-green-400" : "text-slate-800 dark:text-white"}`}>
+                        {isCompleted
+                          ? "Workflow Completed"
+                          : (latest.steps?.find((s) => s.step_number === latest.current_step)?.name
+                              ?? STEP_LABELS[latest.current_step]
+                              ?? `Step ${latest.current_step}`)}
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
 
               {/* Mini step progress bar */}
               <div className="flex items-center gap-1">
@@ -549,6 +609,7 @@ function ApprovalCard({
   isAdminOrManager: boolean;
   onRefresh: () => void;
 }) {
+  const resolveUser = useResolveUser();
   const [showPanel, setShowPanel] = useState(false);
   const [voting, setVoting] = useState<string | null>(null); // approvalId being voted on
   const [voteError, setVoteError] = useState<string | null>(null);
@@ -578,7 +639,7 @@ function ApprovalCard({
     : false;
 
   return (
-    <Card className="rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <Card className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-slate-500" /> Approval
@@ -614,7 +675,7 @@ function ApprovalCard({
             {/* Status header */}
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-800">{fmt(latest.approval_type)} Approval</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-white">{fmt(latest.approval_type)} Approval</p>
                 {latest.due_date && (
                   <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
                     <Clock className="h-3 w-3" /> Due {fmtDate(latest.due_date)}
@@ -627,16 +688,16 @@ function ApprovalCard({
             {/* Vote tally */}
             {voteCount && voteCount.total > 0 && (
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-xl bg-green-50 py-2">
-                  <p className="text-lg font-bold text-green-700">{voteCount.approved}</p>
-                  <p className="text-[11px] text-green-600">Approved</p>
+                <div className="rounded-xl bg-green-50 py-2 dark:bg-green-500/15">
+                  <p className="text-lg font-bold text-green-700 dark:text-green-300">{voteCount.approved}</p>
+                  <p className="text-[11px] text-green-600 dark:text-green-400">Approved</p>
                 </div>
-                <div className="rounded-xl bg-red-50 py-2">
-                  <p className="text-lg font-bold text-red-700">{voteCount.rejected}</p>
-                  <p className="text-[11px] text-red-600">Rejected</p>
+                <div className="rounded-xl bg-red-50 py-2 dark:bg-red-500/15">
+                  <p className="text-lg font-bold text-red-700 dark:text-red-300">{voteCount.rejected}</p>
+                  <p className="text-[11px] text-red-600 dark:text-red-400">Rejected</p>
                 </div>
-                <div className="rounded-xl bg-slate-50 py-2">
-                  <p className="text-lg font-bold text-slate-600">{voteCount.pending}</p>
+                <div className="rounded-xl bg-slate-50 py-2 dark:bg-white/5">
+                  <p className="text-lg font-bold text-slate-600 dark:text-slate-300">{voteCount.pending}</p>
                   <p className="text-[11px] text-slate-400">Pending</p>
                 </div>
               </div>
@@ -691,8 +752,8 @@ function ApprovalCard({
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Approvers</p>
                 <div className="space-y-1.5">
                   {latest.approvers.map((a, i) => (
-                    <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 px-3 py-2">
-                      <p className="truncate text-xs text-slate-600 max-w-[120px]">{a.user_id}</p>
+                    <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 px-3 py-2 dark:border-white/10">
+                      <p className="truncate text-xs text-slate-600 max-w-[120px] dark:text-slate-400">{resolveUser(a.user_id)}</p>
                       <Badge className={`text-[10px] ${badgeClass(a.decision ?? "pending")}`}>
                         {a.decision ? fmt(a.decision) : "Pending"}
                       </Badge>
@@ -725,11 +786,13 @@ function ContractAIChat({ contractId }: { contractId: string }) {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesRef.current) {
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    }
   }, [messages]);
 
   const send = async () => {
@@ -765,7 +828,7 @@ function ContractAIChat({ contractId }: { contractId: string }) {
   };
 
   return (
-    <Card className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col h-full">
+    <Card className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col dark:border-white/10 dark:bg-[#131829]" style={{ height: "calc(80vh + 37px)" }}>
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-4 shrink-0">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20">
@@ -778,7 +841,7 @@ function ContractAIChat({ contractId }: { contractId: string }) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 space-y-3 overflow-y-auto px-6 py-5" style={{ minHeight: 0 }}>
+      <div ref={messagesRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-6 py-5">
         {messages.map((msg) => {
           const isUser = msg.role === "user";
           return (
@@ -788,7 +851,7 @@ function ContractAIChat({ contractId }: { contractId: string }) {
                   "flex h-7 w-7 shrink-0 items-center justify-center rounded-full mt-0.5",
                   isUser
                     ? "bg-slate-900 text-white"
-                    : "border border-slate-200 bg-white text-violet-600"
+                    : "border border-slate-200 bg-white text-violet-600 dark:border-white/10 dark:bg-white/10"
                 )}>
                   {isUser ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
                 </div>
@@ -796,9 +859,15 @@ function ContractAIChat({ contractId }: { contractId: string }) {
                   "rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm",
                   isUser
                     ? "bg-slate-900 text-white"
-                    : "border border-slate-200 bg-slate-50 text-slate-700"
+                    : "border border-slate-200 bg-slate-50 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
                 )}>
-                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                  {isUser ? (
+                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                  ) : (
+                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-1 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-slate-800 dark:prose-invert dark:prose-strong:text-white">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                    </div>
+                  )}
                   {msg.pending && (
                     <span className="mt-1 flex items-center gap-1 text-xs text-slate-400">
                       <Loader2 className="h-3 w-3 animate-spin" /> Generating…
@@ -809,15 +878,14 @@ function ContractAIChat({ contractId }: { contractId: string }) {
             </div>
           );
         })}
-        <div ref={bottomRef} />
       </div>
 
       {/* Input */}
-      <div className="border-t border-slate-100 bg-slate-50 px-4 py-3 shrink-0">
-        <div className="flex items-end gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+      <div className="border-t border-slate-100 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-4 py-3 shrink-0">
+        <div className="flex items-end gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 shadow-sm">
           <textarea
             ref={textareaRef}
-            className="min-h-[36px] flex-1 resize-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+            className="min-h-[36px] max-h-[100px] flex-1 resize-none overflow-y-auto bg-transparent text-sm text-slate-700 dark:text-slate-200 outline-none placeholder:text-slate-400"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
@@ -852,6 +920,7 @@ export default function ContractDetailsPage() {
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -884,6 +953,20 @@ export default function ContractDetailsPage() {
     setDeleting(true);
     try { await api.deleteContract(contract.id); navigate("/contracts"); }
     catch (err) { setError(err instanceof Error ? err.message : "Delete failed."); setDeleting(false); }
+  }
+
+  async function handleReanalyze() {
+    if (!contract?.id || analyzing) return;
+    setAnalyzing(true);
+    setError(null);
+    try {
+      await api.analyzeContract(contract.id);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Analysis failed.");
+    } finally {
+      setAnalyzing(false);
+    }
   }
 
   const latestWorkflowId = workflows[0]?.id;
@@ -923,10 +1006,10 @@ export default function ContractDetailsPage() {
         <div className="space-y-6">
 
           {/* ── Hero strip ───────────────────────────────────────────────── */}
-          <div className="rounded-3xl border border-slate-200 bg-slate-50/70 px-6 py-5">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50/70 px-6 py-5 dark:border-white/10 dark:bg-white/5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl dark:text-white">
                   {contract.title}
                 </h1>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -944,12 +1027,12 @@ export default function ContractDetailsPage() {
                 { icon: <CalendarDays className="h-5 w-5 text-blue-500" />, label: "Start", value: fmtDate(contract.start_date) },
                 { icon: <CalendarDays className="h-5 w-5 text-amber-500" />, label: "End", value: fmtDate(contract.end_date) },
               ].map(({ icon, label, value }) => (
-                <Card key={label} className="rounded-2xl border-slate-200 shadow-sm">
+                <Card key={label} className="rounded-2xl border-slate-200 shadow-sm dark:border-white/10 dark:bg-white/5">
                   <CardContent className="flex items-center gap-3 p-4">
                     {icon}
                     <div>
                       <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
-                      <p className="mt-0.5 font-semibold text-slate-900">{value}</p>
+                      <p className="mt-0.5 font-semibold text-slate-900 dark:text-white">{value}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -959,7 +1042,7 @@ export default function ContractDetailsPage() {
 
           {/* ── Document viewer + AI Chat (side by side) ─────────────────── */}
           <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
-            <DocumentPanel contractId={contract.id} contractTitle={contract.title} />
+            <DocumentPanel contractId={contract.id} contractTitle={contract.title} initialDocumentStatus={contract.document_status} />
             <ContractAIChat contractId={contract.id} />
           </div>
 
@@ -967,7 +1050,7 @@ export default function ContractDetailsPage() {
           <div className="grid gap-6 xl:grid-cols-[1.7fr_0.8fr]">
 
             {/* Details */}
-            <Card className="rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <Card className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
               <CardHeader><CardTitle>Contract Details</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <InfoBlock label="Description" value={contract.description || "No description provided."} />
@@ -977,7 +1060,7 @@ export default function ContractDetailsPage() {
                 </div>
                 <InfoBlock label="Payment Terms" value={contract.payment_terms || "—"} />
 
-                <div className="rounded-2xl bg-slate-50 p-4">
+                <div className="rounded-2xl bg-slate-50 dark:bg-white/5 p-4">
                   <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
                     <Tag className="h-3.5 w-3.5" /> Tags
                   </p>
@@ -990,14 +1073,14 @@ export default function ContractDetailsPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-slate-50 p-4">
+                <div className="rounded-2xl bg-slate-50 dark:bg-white/5 p-4">
                   <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-slate-400">Parties</p>
                   {contract.parties?.length
                     ? (
                       <div className="space-y-2">
                         {contract.parties.map((p, i) => (
-                          <div key={i} className="rounded-xl border border-slate-200 bg-white p-3">
-                            <p className="font-medium text-slate-900">{p.name || "Unnamed"}</p>
+                          <div key={i} className="rounded-xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-white/5">
+                            <p className="font-medium text-slate-900 dark:text-white">{p.name || "Unnamed"}</p>
                             <p className="mt-0.5 text-sm text-slate-500">
                               {p.role}{p.organization ? ` · ${p.organization}` : ""}
                             </p>
@@ -1032,35 +1115,147 @@ export default function ContractDetailsPage() {
                 onRefresh={load}
               />
 
-              {/* AI summary (if available) */}
-              {contract.ai_analysis && (
-                <Card className="rounded-3xl border border-slate-200 bg-white shadow-sm">
-                  <CardHeader>
+              {/* AI Risk Analysis */}
+              <Card className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
+                <CardHeader>
+                  <div className="flex items-center justify-between gap-2">
                     <CardTitle className="flex items-center gap-2">
-                      <Bot className="h-5 w-5 text-violet-500" /> AI Summary
+                      <Bot className="h-5 w-5 text-violet-500" /> AI Risk Analysis
+                    </CardTitle>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleReanalyze}
+                      disabled={analyzing}
+                      className="h-7 rounded-lg px-2.5 text-[12px] dark:border-white/10 dark:text-white dark:hover:bg-white/10"
+                    >
+                      {analyzing
+                        ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Analyzing…</>
+                        : <><RotateCcw className="mr-1 h-3 w-3" /> Re-analyze</>}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {analyzing && (
+                    <div className="flex items-center gap-2 rounded-xl border border-violet-100 bg-violet-50/60 px-3 py-2.5 text-xs text-violet-700 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                      Running AI analysis on document content…
+                    </div>
+                  )}
+                  {!contract.ai_analysis && !analyzing && (
+                    <p className="text-sm text-slate-500 dark:text-slate-400">No analysis yet. Click Re-analyze to generate.</p>
+                  )}
+                  {contract.ai_analysis && (
+                    <>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">Risk Score</span>
+                          <div className="flex items-center gap-2">
+                            <Badge className={badgeClass(contract.ai_analysis.risk_level)}>
+                              {fmt(contract.ai_analysis.risk_level)}
+                            </Badge>
+                            <span className="text-sm font-semibold text-slate-800 dark:text-white">
+                              {contract.ai_analysis.risk_score != null ? `${Math.round(contract.ai_analysis.risk_score)}/100` : "—"}
+                            </span>
+                          </div>
+                        </div>
+                        {contract.ai_analysis.risk_score != null && (
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                (contract.ai_analysis.risk_score ?? 0) >= 67
+                                  ? "bg-red-500"
+                                  : (contract.ai_analysis.risk_score ?? 0) >= 34
+                                  ? "bg-amber-400"
+                                  : "bg-green-500"
+                              }`}
+                              style={{ width: `${Math.min(Math.round(contract.ai_analysis.risk_score), 100)}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      {contract.ai_analysis.summary && (
+                        <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600 leading-relaxed dark:bg-white/5 dark:text-slate-400">
+                          {contract.ai_analysis.summary}
+                        </p>
+                      )}
+                      {(contract.ai_analysis.recommendations?.length ?? 0) > 0 && (
+                        <ul className="space-y-1">
+                          {contract.ai_analysis.recommendations!.slice(0, 3).map((r, i) => (
+                            <li key={i} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400">
+                              <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-green-500" /> {r}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {contract.ai_analysis.analyzed_at && (
+                        <p className="text-[10px] text-slate-400">
+                          Analyzed {new Date(contract.ai_analysis.analyzed_at).toLocaleString()}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Version history */}
+              {(contract.versions?.length ?? 0) > 0 && (
+                <Card className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2">
+                        <History className="h-5 w-5 text-violet-500" /> Version History
+                      </span>
+                      <Badge className="bg-violet-100 text-violet-700">
+                        v{contract.current_version ?? 1} current
+                      </Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">Risk</span>
-                      <Badge className={badgeClass(contract.ai_analysis.risk_level)}>
-                        {fmt(contract.ai_analysis.risk_level)} — {contract.ai_analysis.risk_score ?? "—"}
-                      </Badge>
-                    </div>
-                    {contract.ai_analysis.summary && (
-                      <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600 leading-relaxed">
-                        {contract.ai_analysis.summary}
-                      </p>
-                    )}
-                    {(contract.ai_analysis.recommendations?.length ?? 0) > 0 && (
-                      <ul className="space-y-1">
-                        {contract.ai_analysis.recommendations!.slice(0, 3).map((r, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs text-slate-600">
-                            <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-green-500" /> {r}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                  <CardContent className="space-y-2">
+                    {[...(contract.versions ?? [])].reverse().map((v) => (
+                      <div
+                        key={v.version_number}
+                        className={`flex items-start justify-between gap-3 rounded-xl border p-3 ${
+                          v.version_number === (contract.current_version ?? 1)
+                            ? "border-violet-200 bg-violet-50 dark:border-violet-500/30 dark:bg-violet-500/10"
+                            : "border-slate-100 bg-slate-50 dark:border-white/10 dark:bg-white/5"
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-bold ${
+                              v.version_number === (contract.current_version ?? 1)
+                                ? "text-violet-700"
+                                : "text-slate-500"
+                            }`}>
+                              v{v.version_number}
+                            </span>
+                            {v.version_number === (contract.current_version ?? 1) && (
+                              <Badge className="bg-violet-100 text-violet-700 text-[10px] px-1.5 py-0">current</Badge>
+                            )}
+                          </div>
+                          <p className="mt-0.5 truncate text-sm font-medium text-slate-800 dark:text-slate-200">
+                            {v.change_notes || "—"}
+                          </p>
+                          {v.uploaded_at && (
+                            <p className="mt-0.5 text-xs text-slate-400">
+                              {new Date(v.uploaded_at).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                        {v.file_url && (
+                          <a
+                            href={`${API_BASE_URL}/api/contracts/file/${v.file_url}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-300"
+                            title="Download this version"
+                          >
+                            <Download className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
+                    ))}
                   </CardContent>
                 </Card>
               )}
@@ -1075,9 +1270,9 @@ export default function ContractDetailsPage() {
 // ─── tiny helper ─────────────────────────────────────────────────────────────
 function InfoBlock({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-slate-50 p-4">
+    <div className="rounded-2xl bg-slate-50 dark:bg-white/5 p-4">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">{label}</p>
-      <p className="mt-2 text-slate-800">{value}</p>
+      <p className="mt-2 text-slate-800 dark:text-slate-200">{value}</p>
     </div>
   );
 }

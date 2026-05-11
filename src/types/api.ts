@@ -23,7 +23,8 @@ export type WorkflowStage =
   | "storage"
   | "monitoring"
   | "renewal"
-  | "expired";
+  | "expired"
+  | "completed";
 
 export type RiskLevel = "low" | "medium" | "high";
 
@@ -49,8 +50,25 @@ export type Contract = {
   risk_score?: number | null;
   risk_level?: RiskLevel | null;
   current_version?: number;
+  versions?: Array<{
+    version_number: number;
+    file_url: string;
+    original_filename?: string;
+    file_size?: number;
+    file_type?: string;
+    uploaded_by?: string;
+    uploaded_at?: string;
+    change_notes?: string;
+  }>;
   created_by?: string;
+  created_by_name?: string | null;
   tags?: string[] | null;
+  template_id?: string | null;
+  document_status?: "generating" | "ready" | "failed" | null;
+  workflow_rejected?: boolean | null;
+  workflow_total_steps?: number | null;
+  workflow_current_step?: number | null;
+  workflow_step_names?: string[] | null;
   created_at: string;
   updated_at: string;
   workflow_id?: string;
@@ -185,6 +203,7 @@ export type ConflictResult = {
     description: string;
     recommendation: string;
   }>;
+  contracts_analyzed?: Array<{ id: string; title: string; current_version?: number }>;
   error?: string;
 };
 

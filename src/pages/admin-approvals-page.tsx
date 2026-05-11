@@ -136,48 +136,48 @@ export function AdminApprovalsContent() {
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border border-slate-200 bg-white shadow-sm">
+        <Card className="border border-slate-200 bg-white shadow-sm dark:bg-white/5 dark:border-white/10">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500">Pending</p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950">
+                <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">
                   {loading ? "—" : stats.pending}
                 </p>
               </div>
-              <div className="rounded-2xl bg-amber-50 p-3 text-amber-600">
+              <div className="rounded-2xl bg-amber-50 p-3 text-amber-600 dark:bg-amber-500/20">
                 <Clock3 className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200 bg-white shadow-sm">
+        <Card className="border border-slate-200 bg-white shadow-sm dark:bg-white/5 dark:border-white/10">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500">Approved</p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950">
+                <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">
                   {loading ? "—" : stats.approved}
                 </p>
               </div>
-              <div className="rounded-2xl bg-green-50 p-3 text-green-600">
+              <div className="rounded-2xl bg-green-50 p-3 text-green-600 dark:bg-green-500/20">
                 <ShieldCheck className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200 bg-white shadow-sm">
+        <Card className="border border-slate-200 bg-white shadow-sm dark:bg-white/5 dark:border-white/10">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500">Total Approvals</p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950">
+                <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">
                   {loading ? "—" : stats.total}
                 </p>
               </div>
-              <div className="rounded-2xl bg-slate-100 p-3 text-slate-600">
+              <div className="rounded-2xl bg-slate-100 p-3 text-slate-600 dark:bg-white/10 dark:text-slate-300">
                 <CheckCheck className="h-6 w-6" />
               </div>
             </div>
@@ -185,7 +185,7 @@ export function AdminApprovalsContent() {
         </Card>
       </div>
 
-      <Card className="mt-6 border border-slate-200 bg-white shadow-sm">
+      <Card className="mt-6 border border-slate-200 bg-white shadow-sm dark:bg-white/5 dark:border-white/10">
         <CardHeader>
           <CardTitle>Approval Records</CardTitle>
         </CardHeader>
@@ -200,11 +200,11 @@ export function AdminApprovalsContent() {
                 <Link
                   key={item.id}
                   to={`/contracts/${item.contractId}`}
-                  className="block rounded-2xl border border-slate-200 p-4 transition hover:bg-slate-50"
+                  className="block rounded-2xl border border-slate-200 p-4 transition hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5"
                 >
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
-                      <p className="font-medium text-slate-950">
+                      <p className="font-medium text-slate-950 dark:text-white">
                         {item.contractTitle}
                       </p>
                       <p className="mt-1 text-sm text-slate-500">
