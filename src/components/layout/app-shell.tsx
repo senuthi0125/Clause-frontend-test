@@ -12,6 +12,7 @@ import {
   LockKeyhole,
   Settings,
   X,
+  ShieldCheck,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/clerk-react";
 import { cn } from "@/lib/utils";
@@ -196,6 +197,19 @@ export function AppShell({
         ))}
       </nav>
 
+      {isAdminOrManager && (
+        <>
+          <div className="my-3 h-px w-14 bg-white/15" />
+          <div className="mb-2 px-2 text-center">
+            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/40">Admin</p>
+          </div>
+          <div className="mb-4 px-2">
+            <DesktopNavLink
+              item={{ label: "Admin Functions", href: "/admin/functions", icon: ShieldCheck }}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 
@@ -233,6 +247,22 @@ export function AppShell({
           ))}
         </div>
 
+        {isAdminOrManager && (
+          <>
+            <div className="my-4 h-px bg-white/10" />
+            <div className="mb-2 px-3.5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/35">
+                Admin
+              </p>
+            </div>
+            <div className="space-y-2">
+              <MobileNavLink
+                item={{ label: "Admin Functions", href: "/admin/functions", icon: ShieldCheck }}
+                onClick={() => setMobileOpen(false)}
+              />
+            </div>
+          </>
+        )}
       </nav>
 
       <div className="mx-4 mb-4 mt-2 h-px bg-white/10" />
@@ -306,7 +336,7 @@ export function AppShell({
 
                 {isAdminOrManager && (
                   <Link
-                    to={isAdmin ? "/admin" : "/admin/workflows"}
+                    to="/admin/functions"
                     onClick={handleAdminClick}
                     className={cn(
                       "hidden h-9 items-center gap-2 rounded-2xl border px-3.5 text-[13px] font-medium transition-all duration-200 sm:inline-flex",
