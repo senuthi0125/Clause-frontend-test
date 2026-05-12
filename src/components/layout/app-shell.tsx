@@ -88,10 +88,6 @@ export function AppShell({
 
   const firstName = user?.firstName || user?.username || null;
 
-  const handleAdminClick = () => {
-    localStorage.setItem("admin_mode", "true");
-  };
-
   const DesktopNavLink = ({
     item,
     onClick,
@@ -305,26 +301,33 @@ export function AppShell({
               <div className="flex items-center gap-2.5">
                 <ThemeToggle />
 
-                {isAdminOrManager && (
-                  <Link
-                    to="/admin/functions"
-                    onClick={handleAdminClick}
-                    className={cn(
-                      "hidden h-9 items-center gap-2 rounded-2xl border px-3.5 text-[13px] font-medium transition-all duration-200 sm:inline-flex",
-                      location.pathname.startsWith("/admin")
-                        ? "border-indigo-500/40 bg-indigo-600 text-white shadow-sm shadow-indigo-500/20"
-                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-white/8 dark:text-slate-300 dark:hover:bg-white/12"
-                    )}
-                  >
-                    <LockKeyhole className="h-3.5 w-3.5" />
-                    <span>{isAdmin ? "Admin" : "Manage"}</span>
-                  </Link>
-                )}
+                {isAdminOrManager && (() => {
+                  const isAdminDashboard =
+                    location.pathname === "/dashboard" &&
+                    location.search.includes("view=admin");
+                  const toggleTo = isAdminDashboard
+                    ? "/dashboard"
+                    : "/dashboard?view=admin";
+                  const isActive = isAdminDashboard;
+                  return (
+                    <Link
+                      to={toggleTo}
+                      className={cn(
+                        "hidden h-9 items-center gap-2 rounded-2xl border px-3.5 text-[13px] font-medium transition-all duration-200 sm:inline-flex",
+                        isActive
+                          ? "border-indigo-500/40 bg-indigo-600 text-white shadow-sm shadow-indigo-500/20"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-white/8 dark:text-slate-300 dark:hover:bg-white/12"
+                      )}
+                    >
+                      <LockKeyhole className="h-3.5 w-3.5" />
+                      <span>{isAdminDashboard ? "Contracts" : (isAdmin ? "Admin" : "Manage")}</span>
+                    </Link>
+                  );
+                })()}
 
                 {isAdminOrManager && (
                   <Link
                     to="/admin/notifications"
-                    onClick={handleAdminClick}
                     className="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/8 dark:text-slate-400 dark:hover:bg-white/12"
                   >
                     <Bell className="h-4 w-4" />

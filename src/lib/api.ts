@@ -222,6 +222,20 @@ export const api = {
       method: "DELETE",
     }),
 
+  permanentDeleteContract: (id: string) =>
+    request<{ message: string }>(`/api/contracts/${id}/permanent`, {
+      method: "DELETE",
+    }),
+
+  restoreContract: (id: string) =>
+    request<Contract>(`/api/contracts/${id}/restore`, { method: "PATCH" }),
+
+  archiveContract: (id: string) =>
+    request<Contract>(`/api/contracts/${id}/archive`, { method: "PATCH" }),
+
+  unarchiveContract: (id: string) =>
+    request<Contract>(`/api/contracts/${id}/unarchive`, { method: "PATCH" }),
+
   uploadContract: (file: File) => {
     const formData = new FormData();
     formData.append("file", file);

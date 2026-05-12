@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useSearchParams } from "react-router-dom";
 import {
   SignIn,
   SignUp,
@@ -32,7 +32,9 @@ import { useRole } from "./hooks/use-role";
 
 function DashboardRouter() {
   const { isAdmin } = useRole();
-  return isAdmin ? <AdminOverviewPage /> : <DashboardPage />;
+  const [searchParams] = useSearchParams();
+  const showAdminView = isAdmin && searchParams.get("view") === "admin";
+  return showAdminView ? <AdminOverviewPage /> : <DashboardPage />;
 }
 
 const AUTH_FEATURES = [

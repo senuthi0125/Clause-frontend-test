@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, ChevronUp,
-  Loader2, Plus, Search, ShieldAlert, ShieldCheck, Trash2, Upload, X, XCircle,
+  AlertTriangle, Archive, ArrowRight, CheckCircle2, ChevronDown, ChevronUp,
+  Loader2, Plus, RotateCcw, Search, ShieldAlert, ShieldCheck, Trash2, Upload, X, XCircle,
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useRole } from "@/hooks/use-role";
@@ -192,11 +192,14 @@ function UploadConflictCard({ conflict }: { conflict: ConflictItem }) {
   );
 }
 
+type ViewMode = "active" | "archived" | "trash";
+
 export default function ContractsPage() {
   const navigate = useNavigate();
   const { isAdminOrManager } = useRole();
   const resolveUser = useResolveUser();
 
+  const [view, setView] = useState<ViewMode>("active");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -320,12 +323,12 @@ export default function ContractsPage() {
     }
   }
 
-  const loadContracts = async () => {
+  const loadContracts = async (currentView = view) => {
     setLoading(true);
     setError(null);
 
     try {
-      const query = buildContractsQuery({ search, status, per_page: 50 });
+      const query = buildContractsQuery({ search, status, per_page: 50, view: currentView });
       const data = await api.listContracts(query);
       setContracts(Array.isArray(data.contracts) ? data.contracts : []);
       setMeta(data);
@@ -338,9 +341,16 @@ export default function ContractsPage() {
     }
   };
 
+  const switchView = (v: ViewMode) => {
+    setView(v);
+    setSearch("");
+    setStatus("");
+    loadContracts(v);
+  };
+
   const location = useLocation();
   useEffect(() => {
-    loadContracts();
+    loadContracts(view);
   }, [location.key]);
 
   const contractGroups = useMemo(() => {
@@ -358,75 +368,142 @@ export default function ContractsPage() {
   }, [contracts]);
 
   const deleteContract = async (id: string) => {
-    const confirmed = window.confirm("Delete this contract?");
+    const confirmed = window.confirm("Move this contract to trash? It will be permanently deleted after 30 days.");
     if (!confirmed) return;
-
     try {
       await api.deleteContract(id);
-      await loadContracts();
+      await loadContracts(view);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to delete contract."
-      );
+      setError(err instanceof Error ? err.message : "Failed to delete contract.");
     }
+  };
+
+  const archiveContract = async (id: string) => {
+    try {
+      await api.archiveContract(id);
+      await loadContracts(view);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to archive contract.");
+    }
+  };
+
+  const unarchiveContract = async (id: string) => {
+    try {
+      await api.unarchiveContract(id);
+      await loadContracts(view);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to unarchive contract.");
+    }
+  };
+
+  const restoreContract = async (id: string) => {
+    try {
+      await api.restoreContract(id);
+      await loadContracts(view);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to restore contract.");
+    }
+  };
+
+  const permanentDelete = async (id: string) => {
+    const confirmed = window.confirm("Permanently delete this contract? This cannot be undone.");
+    if (!confirmed) return;
+    try {
+      await api.permanentDeleteContract(id);
+      await loadContracts(view);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to permanently delete contract.");
+    }
+  };
+
+  const daysLeftInTrash = (deletedAt?: string) => {
+    if (!deletedAt) return 30;
+    const deleted = new Date(deletedAt).getTime();
+    const now = Date.now();
+    const daysElapsed = Math.floor((now - deleted) / (1000 * 60 * 60 * 24));
+    return Math.max(0, 30 - daysElapsed);
+  };
+
+  const viewLabels: Record<ViewMode, string> = {
+    active: isAdminOrManager
+      ? "All contracts across all users — manage, review, and advance workflows."
+      : "Your uploaded contracts — track each document's approval stage below.",
+    archived: "Archived contracts — restore them any time to move back to active.",
+    trash: "Deleted contracts — restored or permanently removed. Auto-purged after 30 days.",
   };
 
   return (
     <AppShell
       title="Contracts"
-      subtitle={
-        isAdminOrManager
-          ? "All contracts across all users — manage, review, and advance workflows."
-          : "Your uploaded contracts — track each document's approval stage below."
-      }
+      subtitle={viewLabels[view]}
       contractGroups={contractGroups}
     >
       <Card className="border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm">
         <CardContent className="p-4">
           <div className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && loadContracts()}
-                  placeholder="Search by title"
-                  className="h-11 pl-9"
-                />
-              </div>
-
-              <select
-                className="h-11 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-3 text-sm"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-              >
-                <option value="">All statuses</option>
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="expired">Expired</option>
-                <option value="terminated">Terminated</option>
-                <option value="renewed">Renewed</option>
-              </select>
-
-              <Button onClick={loadContracts} className="h-11 rounded-xl">
-                Apply filters
-              </Button>
+            {/* View switcher */}
+            <div className="flex gap-1 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/6 p-1 w-fit">
+              {(["active", "archived", "trash"] as ViewMode[]).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => switchView(v)}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all ${
+                    view === v
+                      ? "bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-sm"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white"
+                  }`}
+                >
+                  {v === "archived" && <Archive className="h-3.5 w-3.5" />}
+                  {v === "trash" && <Trash2 className="h-3.5 w-3.5" />}
+                  {v.charAt(0).toUpperCase() + v.slice(1)}
+                </button>
+              ))}
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 border-t border-slate-100 dark:border-white/10 pt-1">
-              <Button variant="outline" className="h-11 rounded-xl dark:border-slate-600 dark:text-white dark:hover:bg-white/10" onClick={openUploadModal}>
-                <Upload className="mr-2 h-4 w-4" />
-                Upload contract
-              </Button>
+            {view === "active" && (
+              <>
+                <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && loadContracts(view)}
+                      placeholder="Search by title"
+                      className="h-11 pl-9"
+                    />
+                  </div>
+                  <select
+                    className="h-11 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-3 text-sm"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                  >
+                    <option value="">All statuses</option>
+                    <option value="draft">Draft</option>
+                    <option value="active">Active</option>
+                    <option value="expired">Expired</option>
+                    <option value="terminated">Terminated</option>
+                    <option value="renewed">Renewed</option>
+                  </select>
+                  <Button onClick={() => loadContracts(view)} className="h-11 rounded-xl">
+                    Apply filters
+                  </Button>
+                </div>
 
-              <Button asChild className="h-11 rounded-xl">
-                <Link to="/contracts/new">
-                  <Plus className="mr-2 h-4 w-4" />
-                  New contract
-                </Link>
-              </Button>
-            </div>
+                <div className="flex flex-wrap items-center justify-center gap-3 border-t border-slate-100 dark:border-white/10 pt-1">
+                  <Button variant="outline" className="h-11 rounded-xl dark:border-slate-600 dark:text-white dark:hover:bg-white/10" onClick={openUploadModal}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload contract
+                  </Button>
+                  <Button asChild className="h-11 rounded-xl">
+                    <Link to="/contracts/new">
+                      <Plus className="mr-2 h-4 w-4" />
+                      New contract
+                    </Link>
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -474,6 +551,16 @@ export default function ContractsPage() {
                   <Badge className={getRiskBadgeClass(contract)}>
                     {getRiskBadgeLabel(contract)}
                   </Badge>
+                  {view === "archived" && (
+                    <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                      Archived
+                    </Badge>
+                  )}
+                  {view === "trash" && (
+                    <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                      {daysLeftInTrash((contract as unknown as Record<string, string>).deleted_at)} days left
+                    </Badge>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -532,27 +619,73 @@ export default function ContractsPage() {
                   className="flex flex-wrap gap-2"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {contract.workflow_id ? (
-                    <Button variant="outline" asChild className="rounded-xl">
-                      <Link to={`/workflows/${contract.workflow_id}`}>
-                        {isAdminOrManager ? "Manage workflow" : "Track progress"}
-                      </Link>
-                    </Button>
-                  ) : null}
+                  {view === "active" && (
+                    <>
+                      {contract.workflow_id ? (
+                        <Button variant="outline" asChild className="rounded-xl">
+                          <Link to={`/workflows/${contract.workflow_id}`}>
+                            {isAdminOrManager ? "Manage workflow" : "Track progress"}
+                          </Link>
+                        </Button>
+                      ) : null}
+                      <Button variant="outline" asChild className="rounded-xl">
+                        <Link to="/conflict-detection">Compare</Link>
+                      </Button>
+                      {isAdminOrManager && (
+                        <Button
+                          variant="outline"
+                          onClick={() => archiveContract(contract.id)}
+                          className="rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                        >
+                          <Archive className="mr-2 h-4 w-4" />
+                          Archive
+                        </Button>
+                      )}
+                      {isAdminOrManager && (
+                        <Button
+                          variant="destructive"
+                          onClick={() => deleteContract(contract.id)}
+                          className="rounded-xl"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </Button>
+                      )}
+                    </>
+                  )}
 
-                  <Button variant="outline" asChild className="rounded-xl">
-                    <Link to="/conflict-detection">Compare</Link>
-                  </Button>
-
-                  {isAdminOrManager && (
+                  {view === "archived" && (
                     <Button
-                      variant="destructive"
-                      onClick={() => deleteContract(contract.id)}
+                      variant="outline"
+                      onClick={() => unarchiveContract(contract.id)}
                       className="rounded-xl"
                     >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Unarchive
                     </Button>
+                  )}
+
+                  {view === "trash" && (
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={() => restoreContract(contract.id)}
+                        className="rounded-xl"
+                      >
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Restore
+                      </Button>
+                      {isAdminOrManager && (
+                        <Button
+                          variant="destructive"
+                          onClick={() => permanentDelete(contract.id)}
+                          className="rounded-xl"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete forever
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
