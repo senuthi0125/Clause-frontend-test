@@ -320,14 +320,16 @@ export function AppShell({
                   </Link>
                 )}
 
-                <Link
-                  to={isAdminOrManager ? "/admin/notifications" : "/dashboard"}
-                  onClick={isAdminOrManager ? handleAdminClick : undefined}
-                  className="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/8 dark:text-slate-400 dark:hover:bg-white/12"
-                >
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.65)]" />
-                </Link>
+                {isAdminOrManager && (
+                  <Link
+                    to="/admin/notifications"
+                    onClick={handleAdminClick}
+                    className="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/8 dark:text-slate-400 dark:hover:bg-white/12"
+                  >
+                    <Bell className="h-4 w-4" />
+                    <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.65)]" />
+                  </Link>
+                )}
 
                 <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2.5 py-1 shadow-sm dark:border-white/10 dark:bg-white/8">
                   <UserButton appearance={{ elements: { avatarBox: "h-6 w-6" } }} />

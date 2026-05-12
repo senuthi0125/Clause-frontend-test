@@ -207,15 +207,17 @@ export default function WorkflowDetailPage() {
       title={workflow?.name ?? "Workflow Details"}
       subtitle={contract?.title ?? "Loading contract…"}
     >
-      {/* Back link */}
-      <div className="mb-5">
-        <Link
-          to="/workflows"
-          className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-800 dark:hover:text-slate-200"
-        >
-          <ArrowLeft className="h-4 w-4" /> All workflows
-        </Link>
-      </div>
+      {/* Back link — admins/managers only */}
+      {canManage && (
+        <div className="mb-5">
+          <Link
+            to="/workflows"
+            className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-800 dark:hover:text-slate-200"
+          >
+            <ArrowLeft className="h-4 w-4" /> All workflows
+          </Link>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">

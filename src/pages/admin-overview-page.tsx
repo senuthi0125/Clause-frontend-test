@@ -344,7 +344,7 @@ export default function AdminOverviewPage() {
   return (
     <AppShell
       title="Admin Overview"
-      subtitle="System-wide statistics, value, risk and activity (admin/manager only)."
+      subtitle="System-wide statistics, value, risk and activity."
       contractGroups={contractGroups}
     >
       {error && (
