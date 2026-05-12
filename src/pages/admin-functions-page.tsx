@@ -49,7 +49,7 @@ export default function AdminFunctionsPage() {
 
   return (
     <AppShell
-      title="Admin Functions"
+      title="Admin Panel"
       subtitle="Manage users, workflows, approvals, audit logs, and more."
     >
       <div className="mb-6 flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 dark:border-white/8 bg-slate-100 dark:bg-white/6 p-1">
