@@ -631,26 +631,22 @@ export default function ContractsPage() {
                       <Button variant="outline" asChild className="rounded-xl">
                         <Link to="/conflict-detection">Compare</Link>
                       </Button>
-                      {isAdminOrManager && (
-                        <Button
-                          variant="outline"
-                          onClick={() => archiveContract(contract.id)}
-                          className="rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20"
-                        >
-                          <Archive className="mr-2 h-4 w-4" />
-                          Archive
-                        </Button>
-                      )}
-                      {isAdminOrManager && (
-                        <Button
-                          variant="destructive"
-                          onClick={() => deleteContract(contract.id)}
-                          className="rounded-xl"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </Button>
-                      )}
+                      <Button
+                        variant="outline"
+                        onClick={() => archiveContract(contract.id)}
+                        className="rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                      >
+                        <Archive className="mr-2 h-4 w-4" />
+                        Archive
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => deleteContract(contract.id)}
+                        className="rounded-xl"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </Button>
                     </>
                   )}
 
@@ -675,16 +671,14 @@ export default function ContractsPage() {
                         <RotateCcw className="mr-2 h-4 w-4" />
                         Restore
                       </Button>
-                      {isAdminOrManager && (
-                        <Button
-                          variant="destructive"
-                          onClick={() => permanentDelete(contract.id)}
-                          className="rounded-xl"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete forever
-                        </Button>
-                      )}
+                      <Button
+                        variant="destructive"
+                        onClick={() => permanentDelete(contract.id)}
+                        className="rounded-xl"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete forever
+                      </Button>
                     </>
                   )}
                 </div>
