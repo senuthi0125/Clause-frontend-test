@@ -2,36 +2,23 @@ import { useState } from "react";
 import {
   BarChart2,
   BarChart3,
-  Bell,
   CalendarClock,
   CheckCheck,
   Clock3,
   FileText,
   LayoutDashboard,
-  Layers,
   Monitor,
   Moon,
   Palette,
-  ScrollText,
   ShieldAlert,
   Sun,
   TrendingUp,
-  Users,
-  Workflow,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePreferences } from "@/hooks/use-preferences";
 import { useTheme } from "@/components/theme-provider";
-import { useRole } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
-import { AdminUsersContent } from "./admin-users-page";
-import { AdminApprovalsContent } from "./admin-approvals-page";
-import { AdminAuditContent } from "./admin-audit-page";
-import { AdminNotificationsContent } from "./admin-notifications-page";
-import { WorkflowsContent } from "./workflows-page";
-import { WorkflowTemplatesContent } from "./workflow-templates-page";
-import { ReportsContent } from "./reports-page";
 
 const THEMES = {
   indigo:  { label: "Indigo",  from: "#4F46E5", to: "#7C3AED", light: "#EEF2FF", darkBg: "#1E1B4B", border: "#C7D2FE", darkBorder: "#4338CA", text: "#4338CA", darkText: "#A5B4FC" },
@@ -45,30 +32,11 @@ const THEMES = {
 type ThemeKey = keyof typeof THEMES;
 
 
-type TabId =
-  | "appearance"
-  | "dashboard"
-  | "users"
-  | "approvals"
-  | "audit"
-  | "notifications"
-  | "workflows"
-  | "templates"
-  | "reports";
+type TabId = "appearance" | "dashboard";
 
-const USER_TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
-  { id: "appearance",    label: "Appearance",    icon: Palette },
-  { id: "dashboard",     label: "Dashboard",     icon: LayoutDashboard },
-];
-
-const ADMIN_TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
-  { id: "users",         label: "Users",         icon: Users },
-  { id: "workflows",     label: "Workflows",     icon: Workflow },
-  { id: "templates",     label: "Templates",     icon: Layers },
-  { id: "approvals",     label: "Approvals",     icon: CheckCheck },
-  { id: "audit",         label: "Audit Logs",    icon: ScrollText },
-  { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "reports",       label: "Reports",       icon: BarChart2 },
+const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
+  { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "dashboard",  label: "Dashboard",  icon: LayoutDashboard },
 ];
 
 type FontSize = "sm" | "md" | "lg";
@@ -442,10 +410,7 @@ function DashboardTab() {
 
 export default function SettingsPage() {
   const { loading } = usePreferences();
-  const { isAdmin } = useRole();
   const [activeTab, setActiveTab] = useState<TabId>("appearance");
-
-  const tabs = isAdmin ? [...USER_TABS, ...ADMIN_TABS] : USER_TABS;
 
   if (loading) {
     return (
@@ -455,16 +420,13 @@ export default function SettingsPage() {
     );
   }
 
-  const isAdminTab = ADMIN_TABS.some((t) => t.id === activeTab);
-
   return (
     <AppShell title="Settings" subtitle="Personalise your Clause workspace. All changes save automatically.">
       {/* Tab bar */}
       <div className="mb-6 flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 dark:border-white/8 bg-slate-100 dark:bg-white/6 p-1">
-        {tabs.map((tab) => {
+        {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-          const isAdminSection = ADMIN_TABS.some((t) => t.id === tab.id);
           return (
             <button
               key={tab.id}
@@ -473,8 +435,6 @@ export default function SettingsPage() {
                 "flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-150 whitespace-nowrap",
                 isActive
                   ? "bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-sm"
-                  : isAdminSection
-                  ? "text-indigo-600 dark:text-indigo-400 hover:bg-white/60 dark:hover:bg-white/8"
                   : "text-slate-500 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-white/8 hover:text-slate-700 dark:hover:text-slate-200"
               )}
             >
@@ -486,16 +446,9 @@ export default function SettingsPage() {
       </div>
 
       {/* Tab content */}
-      <div className={isAdminTab ? undefined : "mx-auto max-w-3xl"}>
-        {activeTab === "appearance"    && <AppearanceTab />}
-        {activeTab === "dashboard"     && <DashboardTab />}
-        {activeTab === "users"         && <AdminUsersContent />}
-        {activeTab === "approvals"     && <AdminApprovalsContent />}
-        {activeTab === "audit"         && <AdminAuditContent />}
-        {activeTab === "notifications" && <AdminNotificationsContent />}
-        {activeTab === "workflows"     && <WorkflowsContent adminView />}
-        {activeTab === "templates"     && <WorkflowTemplatesContent />}
-        {activeTab === "reports"       && <ReportsContent />}
+      <div className="mx-auto max-w-3xl">
+        {activeTab === "appearance" && <AppearanceTab />}
+        {activeTab === "dashboard"  && <DashboardTab />}
       </div>
     </AppShell>
   );

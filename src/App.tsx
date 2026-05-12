@@ -24,6 +24,7 @@ import WorkflowsPage from "./pages/workflows-page";
 import WorkflowDetailPage from "./pages/workflow-detail-page";
 import WorkflowTemplatesPage from "./pages/workflow-templates-page";
 import SettingsPage from "./pages/settings-page";
+import AdminFunctionsPage from "./pages/admin-functions-page";
 import { AuthBridge } from "./components/auth-bridge";
 import { ThemeProvider } from "./components/theme-provider";
 import { ChatPopup } from "./components/chat-popup";
@@ -207,6 +208,7 @@ export default function App() {
                     <Route path="/admin/workflows/:id" element={<WorkflowDetailPage />} />
                     <Route path="/admin/workflow-templates" element={<WorkflowTemplatesPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/admin/functions" element={<AdminFunctionsPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
