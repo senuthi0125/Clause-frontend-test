@@ -27,7 +27,7 @@ import { api } from "@/lib/api";
 import { formatLabel as fmt, statusBadgeClass as badgeClass } from "@/lib/utils";
 import type { Contract } from "@/types/api";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ─ Types ─────────────────────────────────────────────────────────────────────
 
 type SmtpSettings = {
   enabled: boolean;
@@ -72,7 +72,7 @@ type NotificationSettings = {
 
 const DEFAULT: NotificationSettings = {
   email: { enabled: false, host: "smtp.gmail.com", port: 465, username: "", password: "", from_name: "Clause CLM", encryption: "ssl" },
-  sms:   { enabled: false, provider: "twilio", account_sid: "", auth_token: "", from_number: "" },
+  sms: { enabled: false, provider: "twilio", account_sid: "", auth_token: "", from_number: "" },
   triggers: { expiry_days: [90, 30, 7], on_approval_request: true, on_workflow_update: true, on_contract_created: false, on_contract_terminated: true, on_high_risk: false },
   recipients: { notify_owner: true, notify_admins: false, notify_managers: false, additional_emails: [] },
 };
@@ -281,9 +281,9 @@ function SmsGatewayCard({ data, onChange, onSave, saving, result }: {
     aws_sns: "AWS SNS",
   };
 
-  const sidLabel   = data.provider === "aws_sns" ? "Access Key ID"  : "Account SID / API Key";
+  const sidLabel = data.provider === "aws_sns" ? "Access Key ID" : "Account SID / API Key";
   const tokenLabel = data.provider === "aws_sns" ? "Secret Access Key" : "Auth Token";
-  const fromLabel  = data.provider === "aws_sns" ? "SNS Topic / Sender ID" : "From number (+1234567890)";
+  const fromLabel = data.provider === "aws_sns" ? "SNS Topic / Sender ID" : "From number (+1234567890)";
 
   return (
     <Card className="border-slate-200 shadow-sm dark:border-white/8">
@@ -353,11 +353,11 @@ function TriggersCard({ data, onChange, onSave, saving, result }: {
   };
 
   const eventToggles: { key: keyof TriggerSettings; label: string }[] = [
-    { key: "on_approval_request",  label: "Approval request submitted" },
-    { key: "on_workflow_update",   label: "Workflow stage advanced" },
-    { key: "on_contract_created",  label: "New contract created" },
+    { key: "on_approval_request", label: "Approval request submitted" },
+    { key: "on_workflow_update", label: "Workflow stage advanced" },
+    { key: "on_contract_created", label: "New contract created" },
     { key: "on_contract_terminated", label: "Contract terminated or rejected" },
-    { key: "on_high_risk",         label: "Contract flagged as high risk" },
+    { key: "on_high_risk", label: "Contract flagged as high risk" },
   ];
 
   return (
@@ -377,11 +377,10 @@ function TriggersCard({ data, onChange, onSave, saving, result }: {
                 <button
                   key={day}
                   onClick={() => toggleDay(day)}
-                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
-                    active
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${active
                       ? "border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/15 dark:text-indigo-300"
                       : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 dark:border-white/10 dark:bg-white/4 dark:text-slate-400"
-                  }`}
+                    }`}
                 >
                   {day === 1 ? "1 day" : `${day} days`} before
                 </button>
@@ -433,9 +432,9 @@ function RecipientsCard({ data, onChange, onSave, saving, result }: {
     onChange({ additional_emails: data.additional_emails.filter((x) => x !== e) });
 
   const roleToggles: { key: keyof RecipientSettings; label: string; icon: React.ElementType }[] = [
-    { key: "notify_owner",    label: "Contract owner / creator",  icon: Users },
-    { key: "notify_admins",   label: "All admin users",           icon: Users },
-    { key: "notify_managers", label: "All manager users",         icon: Users },
+    { key: "notify_owner", label: "Contract owner / creator", icon: Users },
+    { key: "notify_admins", label: "All admin users", icon: Users },
+    { key: "notify_managers", label: "All manager users", icon: Users },
   ];
 
   return (
@@ -499,16 +498,16 @@ function RecipientsCard({ data, onChange, onSave, saving, result }: {
 
 export function AdminNotificationsContent() {
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT);
-  const [loadingSettings, setLoadingSettings]   = useState(true);
-  const [contracts,       setContracts]          = useState<Contract[]>([]);
-  const [expiringSoon,    setExpiringSoon]        = useState<Array<{ id: string; title: string; contract_type: string; days_remaining: number }>>([]);
-  const [recentActivity,  setRecentActivity]     = useState<Array<{ id: string; title: string; status: string; workflow_stage: string; updated_at: string }>>([]);
-  const [loadingMonitor,  setLoadingMonitor]     = useState(true);
+  const [loadingSettings, setLoadingSettings] = useState(true);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [expiringSoon, setExpiringSoon] = useState<Array<{ id: string; title: string; contract_type: string; days_remaining: number }>>([]);
+  const [recentActivity, setRecentActivity] = useState<Array<{ id: string; title: string; status: string; workflow_stage: string; updated_at: string }>>([]);
+  const [loadingMonitor, setLoadingMonitor] = useState(true);
 
   type SaveState = { saving: boolean; result: { ok: boolean; msg: string } | null };
-  const [emailSave,     setEmailSave]     = useState<SaveState>({ saving: false, result: null });
-  const [smsSave,       setSmsSave]       = useState<SaveState>({ saving: false, result: null });
-  const [triggerSave,   setTriggerSave]   = useState<SaveState>({ saving: false, result: null });
+  const [emailSave, setEmailSave] = useState<SaveState>({ saving: false, result: null });
+  const [smsSave, setSmsSave] = useState<SaveState>({ saving: false, result: null });
+  const [triggerSave, setTriggerSave] = useState<SaveState>({ saving: false, result: null });
   const [recipientSave, setRecipientSave] = useState<SaveState>({ saving: false, result: null });
   const [bootstrapping, setBootstrapping] = useState(false);
   const [bootstrapDone, setBootstrapDone] = useState(false);
@@ -516,7 +515,7 @@ export function AdminNotificationsContent() {
   useEffect(() => {
     api.getNotificationSettings()
       .then((raw) => { setSettings({ ...DEFAULT, ...(raw as unknown as NotificationSettings) }); })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoadingSettings(false));
 
     Promise.all([
@@ -563,7 +562,7 @@ export function AdminNotificationsContent() {
 
   const highRiskContracts = useMemo(() =>
     contracts.filter((c) => (c.risk_level || "").toLowerCase() === "high").slice(0, 6),
-  [contracts]);
+    [contracts]);
 
   if (loadingSettings) {
     return <div className="flex items-center gap-2 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Loading settings…</div>;
@@ -656,11 +655,10 @@ export function AdminNotificationsContent() {
                       <p className="truncate font-medium text-slate-900 dark:text-white">{item.title}</p>
                       <p className="text-xs text-slate-500">{fmt(item.contract_type)}</p>
                     </div>
-                    <Badge className={`shrink-0 text-xs ${
-                      item.days_remaining <= 7  ? "bg-red-100 text-red-700" :
-                      item.days_remaining <= 30 ? "bg-amber-100 text-amber-700" :
-                      "bg-blue-100 text-blue-700"
-                    }`}>
+                    <Badge className={`shrink-0 text-xs ${item.days_remaining <= 7 ? "bg-red-100 text-red-700" :
+                        item.days_remaining <= 30 ? "bg-amber-100 text-amber-700" :
+                          "bg-blue-100 text-blue-700"
+                      }`}>
                       {item.days_remaining}d left
                     </Badge>
                   </Link>
