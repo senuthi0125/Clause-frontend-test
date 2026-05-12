@@ -13,9 +13,18 @@ export function formatLabel(value?: string | null): string {
     .join(" ");
 }
 
+// MongoDB stores naive UTC datetimes (no Z). Without Z, JS treats them as local
+// time instead of UTC. Normalise here so all timestamps display correctly.
+function toUtcDate(value: string): Date {
+  const s = value.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(value)
+    ? value
+    : value + "Z";
+  return new Date(s);
+}
+
 export function formatDate(value?: string | null): string {
   if (!value) return "—";
-  const d = new Date(value);
+  const d = toUtcDate(value);
   return isNaN(d.getTime())
     ? "—"
     : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -24,7 +33,7 @@ export function formatDate(value?: string | null): string {
 export function formatDateTime(value?: string | null): string {
   if (!value) return "—";
   try {
-    return new Date(value).toLocaleString(undefined, {
+    return toUtcDate(value).toLocaleString(undefined, {
       month: "short",
       day: "numeric",
       year: "numeric",

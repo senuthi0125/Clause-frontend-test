@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle,
   Bell,
   CalendarClock,
   CheckCircle2,
@@ -509,8 +508,6 @@ export function AdminNotificationsContent() {
   const [smsSave, setSmsSave] = useState<SaveState>({ saving: false, result: null });
   const [triggerSave, setTriggerSave] = useState<SaveState>({ saving: false, result: null });
   const [recipientSave, setRecipientSave] = useState<SaveState>({ saving: false, result: null });
-  const [bootstrapping, setBootstrapping] = useState(false);
-  const [bootstrapDone, setBootstrapDone] = useState(false);
 
   useEffect(() => {
     api.getNotificationSettings()
@@ -531,19 +528,6 @@ export function AdminNotificationsContent() {
 
   const update = <K extends keyof NotificationSettings>(section: K, patch: Partial<NotificationSettings[K]>) =>
     setSettings((prev) => ({ ...prev, [section]: { ...prev[section], ...patch } }));
-
-  const claimAdmin = async () => {
-    setBootstrapping(true);
-    try {
-      await api.bootstrapAdmin();
-      setBootstrapDone(true);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Failed";
-      alert(`Could not claim admin: ${msg}`);
-    } finally {
-      setBootstrapping(false);
-    }
-  };
 
   const save = async (
     section: keyof NotificationSettings,
@@ -570,33 +554,6 @@ export function AdminNotificationsContent() {
 
   return (
     <div className="space-y-5">
-      {/* ── Bootstrap banner (shown until first admin is claimed) ── */}
-      {!bootstrapDone && (
-        <div className="flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-500/10">
-          <div className="flex items-center gap-2.5 text-sm text-amber-800 dark:text-amber-300">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            <span>
-              <span className="font-semibold">No admin assigned yet.</span> Click "Claim Admin" to grant yourself admin access so you can save settings. This button disappears once an admin exists.
-            </span>
-          </div>
-          <Button
-            size="sm"
-            onClick={claimAdmin}
-            disabled={bootstrapping}
-            className="shrink-0 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-60"
-          >
-            {bootstrapping ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-            Claim Admin
-          </Button>
-        </div>
-      )}
-      {bootstrapDone && (
-        <div className="flex items-center gap-2.5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-300">
-          <CheckCircle2 className="h-4 w-4 shrink-0" />
-          You are now admin. You can save settings below.
-        </div>
-      )}
-
       {/* ── Configuration ── */}
       <EmailServerCard
         data={settings.email}
